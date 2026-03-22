@@ -1,0 +1,22 @@
+services:
+  pii-gateway:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./config/examples/config.example.yaml:/etc/pii-gateway/config.yaml:ro
+      - gateway-data:/data
+    environment:
+      PII_GATEWAY_CONFIG_PATH: /etc/pii-gateway/config.yaml
+      STORAGE_LOCAL_PATH: /data/out
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  gateway-data:

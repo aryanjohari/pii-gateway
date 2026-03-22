@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pii-gateway"
+version = "0.1.0"
+description = "Self-hosted PII sanitization gateway (FastAPI + Presidio)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "PII Gateway contributors" }]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "presidio-analyzer>=2.2.0",
+    "presidio-anonymizer>=2.2.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "pandas>=2.2.0",
+    "apscheduler>=3.10.4",
+    "aioboto3>=13.0.0",
+    "PyYAML>=6.0.2",
+    "python-multipart>=0.0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "types-PyYAML>=6.0.12",
+    "aiosqlite>=0.20.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "presidio_analyzer.*",
+    "presidio_anonymizer.*",
+    "apscheduler.*",
+    "aioboto3",
+    "aioboto3.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pandas.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pii_gateway.connectors.s3_inbox", "pii_gateway.storage.s3_compatible_backend"]
+disable_error_code = ["import-untyped"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-q --cov=pii_gateway --cov-report=term-missing --cov-fail-under=0"
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["pii_gateway"]
+
+[tool.coverage.report]
+omit = ["*/tests/*"]

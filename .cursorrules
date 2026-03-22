@@ -1,0 +1,28 @@
+# PII Gateway: Strict Engineering Rules
+
+## General Principles
+
+- **No Classes:** Use functional, declarative programming. Avoid classes unless absolutely necessary for external library compatibility.
+- **Zero-Trust Security:** Never log raw input data. PII must be redacted before any external API calls or logging occurs.
+- **Docker-First:** Ship and run the gateway as a **container** (Docker / Compose). Optimize for reproducible local and server deploys, not for a specific cloud’s proprietary runtime.
+- **Containerized FastAPI:** The HTTP API and background jobs run inside the same **FastAPI** process model unless split is justified; use **lifespan** hooks for startup/shutdown (e.g. Presidio singleton).
+- **12-Factor App:** Store **config in the environment** (and mounted config files where appropriate); treat logs as **stdout/stderr** streams; keep processes **stateless** between requests—persist only via explicit **local disk** or **object storage** backends.
+- **Local / S3-Compatible Storage:** Default artifact backends are **local filesystem** and **S3-compatible APIs** (MinIO, R2, AWS S3). Do not assume AWS-only SDK paths without a configurable endpoint.
+
+## Python & FastAPI Standards
+
+- **Naming:** Use `snake_case` for files, functions, and variables (e.g., `sanitize_payload.py`).
+- **Typing:** Strict Type Hints are mandatory for all function parameters and return values.
+- **Pydantic:** Use Pydantic V2 models for all request/response schemas. No raw dicts for data validation.
+- **Async:** Use `async def` for all I/O bound operations (API calls, DB queries, object storage).
+
+## Runtime & Infrastructure
+
+- **Object storage (optional):** When using S3-compatible or AWS S3, prefer **`aioboto3`** for async I/O where it fits the call path.
+- **Error Handling:** Use FastAPI’s `HTTPException` with clear, descriptive error codes. Use guard clauses to avoid nested `if` statements.
+- **IaC split:** **Primary:** `Dockerfile`, `docker-compose.yml`, and documented env vars. **Optional:** Terraform/OpenTofu (or AWS SAM) for teams that deploy to AWS—must not be required to run the core app.
+
+## PII Redaction Logic
+
+- **Testing:** Every redaction logic path must have 100% unit test coverage.
+- **Presidio:** Use Microsoft Presidio for NLP-based redaction, but optimize the `AnalyzerEngine` to be instantiated only once per process (**FastAPI lifespan** pattern).

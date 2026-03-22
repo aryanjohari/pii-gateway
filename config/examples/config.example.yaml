@@ -1,0 +1,23 @@
+config_version: 1
+redaction_entities:
+  - EMAIL_ADDRESS
+  - PERSON
+structured_field_rules:
+  email: redact
+  full_name: tokenize
+postgres_batch:
+  enabled: false
+  query_name: export_users
+  queries:
+    export_users:
+      sql: "SELECT id, email, full_name, note FROM app.users WHERE updated_at > :since"
+      params_from: last_run_cursor
+batch_file_ingest:
+  mode: local
+  local_path: /data/inbox
+  poll_seconds: 60
+  s3_bucket: ""
+  s3_prefix: ""
+persistence:
+  write_raw: false
+  write_cleaned: true
