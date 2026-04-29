@@ -25,26 +25,30 @@ def test_api_key_failure() -> None:
     assert ei.value.status_code == 401
 
 
-def test_basic_success() -> None:
-    import base64
-
-    token = base64.b64encode(b"user:pass").decode("ascii")
-    req = MagicMock()
-    req.headers = {"Authorization": f"Basic {token}"}
-    s = Settings.model_construct(
-        sanitize_http_api_key=None,
-        basic_auth_user="user",
-        basic_auth_password="pass",
-    )
-    verify_http_auth(req, s)
-
-
-def test_open_when_unconfigured() -> None:
+def test_sanitize_unavailable_when_api_key_unset() -> None:
     req = MagicMock()
     req.headers = {}
-    s = Settings.model_construct(
-        sanitize_http_api_key=None,
-        basic_auth_user=None,
-        basic_auth_password=None,
-    )
-    verify_http_auth(req, s)
+    s = Settings.model_construct(sanitize_http_api_key=None)
+    with pytest.raises(HTTPException) as ei:
+        verify_http_auth(req, s)
+    assert ei.value.status_code == 503
+    assert isinstance(ei.value.detail, dict)
+    assert ei.value.detail["code"] == "misconfigured"
+
+
+def test_sanitize_unavailable_when_api_key_empty() -> None:
+    req = MagicMock()
+    req.headers = {}
+    s = Settings.model_construct(sanitize_http_api_key="")
+    with pytest.raises(HTTPException) as ei:
+        verify_http_auth(req, s)
+    assert ei.value.status_code == 503
+
+
+def test_sanitize_unavailable_when_api_key_whitespace_only() -> None:
+    req = MagicMock()
+    req.headers = {}
+    s = Settings.model_construct(sanitize_http_api_key="   ")
+    with pytest.raises(HTTPException) as ei:
+        verify_http_auth(req, s)
+    assert ei.value.status_code == 503

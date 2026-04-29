@@ -16,8 +16,6 @@ class Settings(BaseSettings):
 
     pii_gateway_config_path: Path | None = Field(default=None)
     sanitize_http_api_key: str | None = Field(default=None)
-    basic_auth_user: str | None = Field(default=None)
-    basic_auth_password: str | None = Field(default=None)
 
     cors_allowed_origins: str = Field(default="")
 

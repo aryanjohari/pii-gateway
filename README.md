@@ -14,9 +14,10 @@ Self-hosted **PII sanitization gateway** for structured and free-text data. Oper
 4. [Real-time API (integration guide)](#4-real-time-api-integration-guide)
 5. [Batch ingestion & storage](#5-batch-ingestion--storage)
 6. [Microservice network integration (Docker)](#6-microservice-network-integration-docker)
-7. [Operational notes](#7-operational-notes)
-8. [Reference: HTTP surface](#8-reference-http-surface)
-9. [License & contributing](#9-license--contributing)
+7. [Deployment paths & TLS](#7-deployment-paths--tls)
+8. [Operational notes](#8-operational-notes)
+9. [Reference: HTTP surface](#9-reference-http-surface)
+10. [License & contributing](#10-license--contributing)
 
 ---
 
@@ -58,12 +59,14 @@ cp config/examples/config.example.yaml ./config.yaml
 
 **3. Set required variables in `.env`**
 
-At minimum, set a strong HTTP API key (used by `POST /v1/sanitize`):
+Set a strong HTTP API key; **`POST /v1/sanitize` requires it**.
 
 ```bash
 # In .env (compose also sets PII_GATEWAY_CONFIG_PATH on the service)
 SANITIZE_HTTP_API_KEY=<generate-a-long-random-secret>
 ```
+
+Leaving `SANITIZE_HTTP_API_KEY` empty yields HTTP **503** on sanitize routes (`SANITIZE_HTTP_API_KEY is not set`).
 
 **4. Start the stack (build from this repo’s `Dockerfile`)**
 
@@ -115,8 +118,7 @@ Canonical names (see `.env.example` for the full list):
 | Variable | Purpose |
 |----------|---------|
 | `PII_GATEWAY_CONFIG_PATH` | Path **inside the container** to the policy file (mount read-only). |
-| `SANITIZE_HTTP_API_KEY` | API key for `POST /v1/sanitize` (header `X-API-Key`). |
-| `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` | Optional HTTP Basic instead of API key. |
+| `SANITIZE_HTTP_API_KEY` | **Required** for `POST /v1/sanitize` (header `X-API-Key`). Empty/unset on the server yields **503** until configured. |
 | `STORAGE_BACKEND` | `local` or `s3` — selects outbound implementation. |
 | `STORAGE_LOCAL_PATH` | Root directory for `local` backend (e.g. `/data/out`). |
 | `S3_ENDPOINT_URL` | Optional; set for MinIO, R2, etc. Omit for AWS S3 default endpoint. |
@@ -180,9 +182,13 @@ persistence:
 |------|--------|
 | **Method / path** | `POST /v1/sanitize` |
 | **Content-Type** | `application/json` |
-| **Auth** | `X-API-Key: <SANITIZE_HTTP_API_KEY>` **or** HTTP Basic if configured. If neither API key nor Basic is configured, the route is **open** (development only). |
+| **Auth** | `X-API-Key: <SANITIZE_HTTP_API_KEY>` (constant-time comparison). The server must have a non-empty key configured; see error responses. |
 
-### 4.2 Request body
+### 4.2 How sanitization runs
+
+On startup, the gateway loads the mounted policy file from `PII_GATEWAY_CONFIG_PATH` into a `GatewayPolicy` (`src/pii_gateway/policy_schema.py`). The FastAPI lifespan initializes **one** shared Presidio `AnalyzerEngine` and `AnonymizerEngine` (`src/pii_gateway/main.py`). Each request body is passed through `sanitize_payload` (`src/pii_gateway/core/sanitize_pipeline.py`): free text uses `redaction_entities` and Presidio; `structured` records use `structured_field_rules` (redact, tokenize, mask, or passthrough per field).
+
+### 4.3 Request body
 
 Provide **at least one** of `text` or `structured`:
 
@@ -199,7 +205,7 @@ Provide **at least one** of `text` or `structured`:
 
 Either field may be omitted; **both** may be present.
 
-### 4.3 Example `curl` (success)
+### 4.4 Example `curl` (success)
 
 ```bash
 curl -sS -X POST http://localhost:8000/v1/sanitize \
@@ -214,7 +220,7 @@ curl -sS -X POST http://localhost:8000/v1/sanitize \
 
 The server echoes or generates a correlation id (header **`X-Correlation-ID`** on the response).
 
-### 4.4 Success response (JSON)
+### 4.5 Success response (JSON)
 
 Shape (Pydantic models in `src/pii_gateway/api/schemas.py`):
 
@@ -247,8 +253,9 @@ Shape (Pydantic models in `src/pii_gateway/api/schemas.py`):
 - Treat **`result`** as the **only** sanitized payload to forward downstream.
 - **`meta.entity_summary`** aggregates Presidio entity counts (safe metadata).
 - When `persistence.write_cleaned` is `true`, a **JSON artifact** is also written under `cleaned/http/<YYYY>/<MM>/<DD>/<correlation_id>.json` (local or S3, depending on `STORAGE_BACKEND`).
+- If `persistence.write_raw` is **`true`**, an additional JSON artifact is written that includes **pre-sanitization** request content. That data is **plaintext PII** wherever it lives (`STORAGE_LOCAL_PATH` on disk or your S3-compatible bucket). IAM, disk access, retention, and backups must match your security policy—keep `write_raw` **`false`** unless you explicitly need forensic or audit copies.
 
-### 4.5 Error responses (JSON)
+### 4.6 Error responses (JSON)
 
 Validation failure (`422`):
 
@@ -262,7 +269,7 @@ Validation failure (`422`):
 }
 ```
 
-Auth failure (`401` / `403`):
+Auth failure when the server has a key configured but the request is missing or wrong (`401`):
 
 ```json
 {
@@ -270,6 +277,18 @@ Auth failure (`401` / `403`):
   "error": {
     "code": "unauthorized",
     "message": "Invalid or missing API key"
+  }
+}
+```
+
+Configuration error: `SANITIZE_HTTP_API_KEY` is unset or blank on the server (`503`):
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "misconfigured",
+    "message": "SANITIZE_HTTP_API_KEY is not set"
   }
 }
 ```
@@ -461,7 +480,19 @@ curl -sS -X POST http://pii-gateway:8000/v1/sanitize \
 
 ---
 
-## 7. Operational notes
+## 7. Deployment paths & TLS
+
+These are **conceptual paths**, not one turnkey YAML for production.
+
+1. **Local Docker Compose** — [`docker-compose.yml`](docker-compose.yml) (and optionally [`docker-compose.example.yml`](docker-compose.example.yml)) builds the image and runs the gateway with mounted policy and env from `.env`. Compose exposes **plain HTTP** on port 8000 by default; that is normal for local development.
+2. **Optional EC2 + Docker** — Same container image on a VM you manage: install Docker, pull or build the image, pass env and volume mounts (or use an orchestrator later).
+3. **AWS-style layout** — Push the image to **Amazon ECR**, run tasks on **ECS Fargate**, and put an **Application Load Balancer** in front to terminate **HTTPS** with a certificate (ACM); the target group forwards to containers on port **8000**. Other clouds follow the same pattern (HTTPS at the edge, plain HTTP inside the VPC).
+
+Between containers on a private network, HTTP may be acceptable; anything reachable from the internet should rely on TLS **outside** this process (load balancer, reverse proxy, or mesh)—the app does not terminate HTTPS itself.
+
+---
+
+## 8. Operational notes
 
 - **Scheduler:** APScheduler runs **file inbox** polling on the configured interval. Postgres batch runs only when `POSTGRES_BATCH_CRON` is set **and** `postgres_batch.enabled` is `true`.
 - **State disk:** Persist **`GATEWAY_STATE_DIR`** (cursor + processed file fingerprints) across restarts.
@@ -470,18 +501,18 @@ curl -sS -X POST http://pii-gateway:8000/v1/sanitize \
 
 ---
 
-## 8. Reference: HTTP surface
+## 9. Reference: HTTP surface
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| `POST` | `/v1/sanitize` | API key or Basic | Real-time sanitization. |
+| `POST` | `/v1/sanitize` | `X-API-Key` | Real-time sanitization. |
 | `GET` | `/healthz` | None | Liveness. |
 | `POST` | `/internal/jobs/postgres-batch` | `X-Internal-Job-Key` | Run Postgres batch once. |
 | `POST` | `/internal/jobs/file-ingest` | `X-Internal-Job-Key` | Run file inbox scan once. |
 
 ---
 
-## 9. License & contributing
+## 10. License & contributing
 
 **License:** MIT — see [LICENSE](LICENSE).
 
