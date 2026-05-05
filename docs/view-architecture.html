@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PII Gateway — architecture diagram</title>
+    <style>
+      body {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+        margin: 0;
+        padding: 1rem 1.5rem 3rem;
+        background: #0f1419;
+        color: #e6edf3;
+      }
+      h1 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0 0 1rem;
+      }
+      p {
+        font-size: 0.875rem;
+        opacity: 0.85;
+        max-width: 52rem;
+        line-height: 1.45;
+      }
+      a {
+        color: #79c0ff;
+      }
+      #diagram {
+        margin-top: 1.25rem;
+        background: #161b22;
+        border-radius: 8px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      code {
+        font-size: 0.8125rem;
+        background: #21262d;
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PII Gateway — architecture</h1>
+    <p>
+      Canonical source: <code>docs/architecture.mmd</code>. Edit that file, then view here (with a
+      local server), on GitHub’s render of <code>PROJECT.md</code>, or paste into
+      <a href="https://mermaid.live" rel="noreferrer">mermaid.live</a>.
+    </p>
+    <p>
+      <strong>Local server (loads <code>architecture.mmd</code> automatically):</strong>
+      <code>cd docs &amp;&amp; python3 -m http.server 8765</code>
+      then open <code>http://127.0.0.1:8765/view-architecture.html</code>.
+    </p>
+    <div id="diagram" class="mermaid"></div>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "strict" });
+
+      const embeddedFallback = `flowchart TB
+  subgraph callers["Who calls it"]
+    C1[Apps / BFF / workers / scripts]
+    C2[Automation cron or internal jobs]
+  end
+
+  subgraph gw["PII Gateway FastAPI container"]
+    R1[POST /v1/sanitize plus X-API-Key]
+    R2[POST /internal/jobs/* plus internal key]
+    AUTH[Auth and correlation middleware]
+    PL[sanitize pipeline]
+    PR[Presidio Analyzer and Anonymizer]
+    POL[Policy YAML or JSON mount]
+    R1 --> AUTH
+    R2 --> AUTH
+    AUTH --> PL
+    POL --> PL
+    PL --> PR
+    SCH[Optional APScheduler]
+    SCH -.-> R2
+  end
+
+  subgraph inbound["Configured batch or file paths"]
+    PG[(PostgreSQL read-only exports)]
+    LOC[Local inbox CSV or JSON array]
+    S3IN[S3-compatible inbox]
+  end
+
+  subgraph outbound["Artifact storage"]
+    DISK[Local volume]
+    S3OUT[S3-compatible bucket]
+  end
+
+  C1 -->|HTTP JSON| R1
+  C2 -->|HTTP trigger| R2
+  PG --> PL
+  LOC --> PL
+  S3IN --> PL
+  PL --> DISK
+  PL --> S3OUT
+
+  HZ[GET /healthz]
+  HZ -.-> gw`;
+
+      async function loadDef() {
+        if (globalThis.location?.protocol !== "http:" && globalThis.location?.protocol !== "https:") {
+          return embeddedFallback;
+        }
+        try {
+          const res = await fetch(new URL("./architecture.mmd", import.meta.url), { cache: "no-store" });
+          if (!res.ok) {
+            throw new Error(String(res.status));
+          }
+          return (await res.text()).replace(/^%%.*$/gm, "").trim();
+        } catch {
+          return embeddedFallback;
+        }
+      }
+
+      const def = await loadDef();
+      const el = document.querySelector("#diagram");
+      el.textContent = def;
+      await mermaid.run({ nodes: [el] });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+%% PII Gateway architecture (Mermaid source of truth)
+%% View: https://mermaid.live  |  local: open docs/view-architecture.html
+%% If you edit this file, update the mermaid block under "Architecture diagram" in PROJECT.md.
+
+flowchart TB
+  subgraph callers["Who calls it"]
+    C1[Apps / BFF / workers / scripts]
+    C2[Automation cron or internal jobs]
+  end
+
+  subgraph gw["PII Gateway FastAPI container"]
+    R1[POST /v1/sanitize plus X-API-Key]
+    R2[POST /internal/jobs/* plus internal key]
+    AUTH[Auth and correlation middleware]
+    PL[sanitize pipeline]
+    PR[Presidio Analyzer and Anonymizer]
+    POL[Policy YAML or JSON mount]
+    R1 --> AUTH
+    R2 --> AUTH
+    AUTH --> PL
+    POL --> PL
+    PL --> PR
+    SCH[Optional APScheduler]
+    SCH -.-> R2
+  end
+
+  subgraph inbound["Configured batch or file paths"]
+    PG[(PostgreSQL read-only exports)]
+    LOC[Local inbox CSV or JSON array]
+    S3IN[S3-compatible inbox]
+  end
+
+  subgraph outbound["Artifact storage"]
+    DISK[Local volume]
+    S3OUT[S3-compatible bucket]
+  end
+
+  C1 -->|HTTP JSON| R1
+  C2 -->|HTTP trigger| R2
+  PG --> PL
+  LOC --> PL
+  S3IN --> PL
+  PL --> DISK
+  PL --> S3OUT
+
+  HZ[GET /healthz]
+  HZ -.-> gw
