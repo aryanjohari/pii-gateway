@@ -1,5 +1,7 @@
 # PII Gateway
 
+Visitor overview: see portfolio.yaml.
+
 Self-hosted **PII sanitization gateway** for structured and free-text data. Operators run a **single Docker-first** service (FastAPI) that applies **Microsoft Presidio** NLP analysis plus **config-driven rules** for JSON fields. Inputs may be **real-time HTTP JSON**, **PostgreSQL** batch exports, or **CSV / JSON-array** files from a **local directory** or **S3-compatible** storage. Sanitized artifacts are written through a small **outbound storage interface** to **local disk** or **S3-compatible** buckets.
 
 **Why use it:** Keep sensitive data out of downstream systems by centralizing redaction/tokenization behind one API and one policy file, with **12-Factor** configuration (**environment variables** for secrets, **mounted YAML/JSON** for policy), suitable for Compose, Kubernetes, or PaaS.

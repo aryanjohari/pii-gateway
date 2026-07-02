@@ -1,0 +1,19 @@
+title: PII Gateway
+summary: Self-hosted API that redacts personal data from JSON, text, and batch files before downstream use.
+description: >
+  PII Gateway helps engineering teams keep sensitive data out of analytics, logs, and
+  third-party tools by centralizing redaction behind one API and one policy file. Call it
+  over HTTP for live sanitization, or let it poll PostgreSQL exports and CSV or JSON inbox
+  files on a schedule. Microsoft Presidio detects entities like emails and names in free
+  text; structured JSON fields follow per-field rules such as redact, tokenize, or mask.
+  Sanitized results can be returned inline or written to local disk or S3-compatible storage.
+stack:
+  - Python
+  - FastAPI
+  - Presidio
+  - PostgreSQL
+  - Docker
+  - APScheduler
+status: active
+links:
+  github: https://github.com/aryanjohari/pii-gateway
