@@ -48,7 +48,7 @@
     <h1>PII Gateway — architecture</h1>
     <p>
       Canonical source: <code>docs/architecture.mmd</code>. Edit that file, then view here (with a
-      local server), on GitHub’s render of <code>PROJECT.md</code>, or paste into
+      local server), see the case study in <code>docs/ARCHITECTURE.md</code>, or paste into
       <a href="https://mermaid.live" rel="noreferrer">mermaid.live</a>.
     </p>
     <p>
@@ -62,47 +62,47 @@
       mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "strict" });
 
       const embeddedFallback = `flowchart TB
-  subgraph callers["Who calls it"]
-    C1[Apps / BFF / workers / scripts]
-    C2[Automation cron or internal jobs]
+  subgraph callers["Callers"]
+    APP[Apps / workers / scripts]
+    AUTO[Cron or internal automation]
   end
 
-  subgraph gw["PII Gateway FastAPI container"]
-    R1[POST /v1/sanitize plus X-API-Key]
-    R2[POST /internal/jobs/* plus internal key]
-    AUTH[Auth and correlation middleware]
-    PL[sanitize pipeline]
-    PR[Presidio Analyzer and Anonymizer]
-    POL[Policy YAML or JSON mount]
-    R1 --> AUTH
-    R2 --> AUTH
-    AUTH --> PL
-    POL --> PL
-    PL --> PR
+  subgraph gw["PII Gateway — single FastAPI container"]
+    SAN[POST /v1/sanitize]
+    JOBS[POST /internal/jobs/*]
+    HZ[GET /healthz]
+    AUTH[API-key auth + correlation ID]
+    POL[Mounted policy YAML/JSON]
+    PIPE[Sanitize pipeline]
+    PR[Presidio engines — lifespan singleton]
     SCH[Optional APScheduler]
-    SCH -.-> R2
+
+    SAN --> AUTH
+    JOBS --> AUTH
+    AUTH --> PIPE
+    POL --> PIPE
+    PIPE --> PR
+    SCH -.-> JOBS
   end
 
-  subgraph inbound["Configured batch or file paths"]
+  subgraph inbound["Batch / file sources"]
     PG[(PostgreSQL read-only exports)]
-    LOC[Local inbox CSV or JSON array]
+    LOC[Local CSV / JSON inbox]
     S3IN[S3-compatible inbox]
   end
 
-  subgraph outbound["Artifact storage"]
+  subgraph out["Artifact storage"]
     DISK[Local volume]
     S3OUT[S3-compatible bucket]
   end
 
-  C1 -->|HTTP JSON| R1
-  C2 -->|HTTP trigger| R2
-  PG --> PL
-  LOC --> PL
-  S3IN --> PL
-  PL --> DISK
-  PL --> S3OUT
-
-  HZ[GET /healthz]
+  APP -->|JSON + X-API-Key| SAN
+  AUTO -->|internal key| JOBS
+  PG --> PIPE
+  LOC --> PIPE
+  S3IN --> PIPE
+  PIPE -->|optional raw / cleaned| DISK
+  PIPE -->|optional raw / cleaned| S3OUT
   HZ -.-> gw`;
 
       async function loadDef() {
