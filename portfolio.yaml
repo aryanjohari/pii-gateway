@@ -17,5 +17,6 @@ stack:
   - APScheduler
 status: active
 diagram: docs/architecture.mmd
+graph: docs/architecture.graph.json
 links:
   github: https://github.com/aryanjohari/pii-gateway

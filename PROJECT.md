@@ -2,7 +2,7 @@
 
 > **One-line:** A Docker-friendly **Presidio + FastAPI** service that scrubs **plain text** and **nested JSON** from a mounted **policy file**, with optional **batch/file ingestion** and **artifact storage**. It centralizes redaction; it is **not** a compliance program or database firewall (personal / learning project).
 
-Visitor card copy lives in [`portfolio.yaml`](portfolio.yaml). Design deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Diagram source: [`docs/architecture.mmd`](docs/architecture.mmd).
+Visitor card copy lives in [`portfolio.yaml`](portfolio.yaml). Design deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). C4 views: [`docs/c4/`](docs/c4/). Diagram / portfolio map: [`docs/architecture.mmd`](docs/architecture.mmd), [`docs/architecture.graph.json`](docs/architecture.graph.json).
 
 ---
 

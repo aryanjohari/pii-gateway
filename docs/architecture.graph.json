@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "title": "PII Gateway",
+  "summary": "Callers send JSON or text to POST /v1/sanitize; a mounted policy plus Presidio redact PII and return a cleaned payload. Optional batch jobs pull Postgres or inbox files and can write artifacts.",
+  "notes": "Simplified from C2 containers: the single FastAPI process is shown as API + pipeline + Presidio nodes. Batch sources, automation, and artifact storage are optional (dashed). Full C4: docs/c4/. C3 zoom only for pii-gateway.",
+  "skin": "default",
+  "c4": {
+    "level": "containers",
+    "componentsPath": "docs/c4/3-components/"
+  },
+  "groups": [
+    { "id": "inputs", "label": "Inputs" },
+    { "id": "core", "label": "Core" },
+    { "id": "outputs", "label": "Outputs" }
+  ],
+  "nodes": [
+    {
+      "id": "apps",
+      "label": "Apps / scripts",
+      "kind": "input",
+      "groupId": "inputs",
+      "shape": "rounded"
+    },
+    {
+      "id": "automation",
+      "label": "Automation",
+      "kind": "input",
+      "groupId": "inputs",
+      "shape": "rounded"
+    },
+    {
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "kind": "store",
+      "groupId": "inputs",
+      "shape": "cylinder"
+    },
+    {
+      "id": "inbox",
+      "label": "CSV / JSON inbox",
+      "kind": "store",
+      "groupId": "inputs",
+      "shape": "cylinder"
+    },
+    {
+      "id": "sanitize-api",
+      "label": "Sanitize API",
+      "kind": "process",
+      "groupId": "core",
+      "shape": "rect"
+    },
+    {
+      "id": "batch-jobs",
+      "label": "Batch jobs",
+      "kind": "process",
+      "groupId": "core",
+      "shape": "rect"
+    },
+    {
+      "id": "policy",
+      "label": "Policy file",
+      "kind": "other",
+      "groupId": "core",
+      "shape": "ticket"
+    },
+    {
+      "id": "sanitize-pipeline",
+      "label": "Sanitize pipeline",
+      "kind": "process",
+      "groupId": "core",
+      "shape": "rect"
+    },
+    {
+      "id": "presidio",
+      "label": "Presidio",
+      "kind": "process",
+      "groupId": "core",
+      "shape": "rounded"
+    },
+    {
+      "id": "cleaned-response",
+      "label": "Cleaned response",
+      "kind": "output",
+      "groupId": "outputs",
+      "shape": "stadium"
+    },
+    {
+      "id": "artifacts",
+      "label": "Artifacts",
+      "kind": "output",
+      "groupId": "outputs",
+      "shape": "cylinder"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-apps-api",
+      "from": "apps",
+      "to": "sanitize-api",
+      "label": "POST /v1/sanitize",
+      "style": "solid"
+    },
+    {
+      "id": "e-auto-batch",
+      "from": "automation",
+      "to": "batch-jobs",
+      "label": "POST /internal/jobs/*",
+      "style": "dashed"
+    },
+    {
+      "id": "e-pg-batch",
+      "from": "postgres",
+      "to": "batch-jobs",
+      "label": "named SQL",
+      "style": "dashed"
+    },
+    {
+      "id": "e-inbox-batch",
+      "from": "inbox",
+      "to": "batch-jobs",
+      "label": "local or S3",
+      "style": "dashed"
+    },
+    {
+      "id": "e-api-pipe",
+      "from": "sanitize-api",
+      "to": "sanitize-pipeline",
+      "label": "after API key",
+      "style": "solid"
+    },
+    {
+      "id": "e-batch-pipe",
+      "from": "batch-jobs",
+      "to": "sanitize-pipeline",
+      "label": "same core",
+      "style": "dashed"
+    },
+    {
+      "id": "e-policy-pipe",
+      "from": "policy",
+      "to": "sanitize-pipeline",
+      "label": "rules",
+      "style": "solid"
+    },
+    {
+      "id": "e-pipe-presidio",
+      "from": "sanitize-pipeline",
+      "to": "presidio",
+      "label": "analyze / redact",
+      "style": "solid"
+    },
+    {
+      "id": "e-pipe-resp",
+      "from": "sanitize-pipeline",
+      "to": "cleaned-response",
+      "label": "JSON result",
+      "style": "solid"
+    },
+    {
+      "id": "e-pipe-art",
+      "from": "sanitize-pipeline",
+      "to": "artifacts",
+      "label": "optional raw/cleaned",
+      "style": "dashed"
+    }
+  ],
+  "tour": [
+    "apps",
+    "sanitize-api",
+    "policy",
+    "sanitize-pipeline",
+    "cleaned-response"
+  ],
+  "captions": [
+    {
+      "id": "apps",
+      "title": "Caller",
+      "body": "An app, worker, or script sends free text and/or nested JSON that may contain personal data.",
+      "spotlightIds": ["apps"]
+    },
+    {
+      "id": "sanitize-api",
+      "title": "Sanitize endpoint",
+      "body": "POST /v1/sanitize authenticates with X-API-Key, then hands the body to the shared pipeline.",
+      "spotlightIds": ["sanitize-api"]
+    },
+    {
+      "id": "policy",
+      "title": "Mounted policy",
+      "body": "A YAML or JSON file sets entity types and per-field rules; secrets stay in environment variables.",
+      "spotlightIds": ["policy"]
+    },
+    {
+      "id": "sanitize-pipeline",
+      "title": "Redact",
+      "body": "The pipeline applies field rules and runs undeclared strings through Presidio so nothing slips through by default.",
+      "items": [
+        "Structured redact / tokenize / mask when declared",
+        "Presidio NLP on free text and undeclared strings"
+      ],
+      "spotlightIds": ["sanitize-pipeline", "presidio"]
+    },
+    {
+      "id": "cleaned-response",
+      "title": "Cleaned payload",
+      "body": "The response returns cleaned data plus counts-only entity summary—no raw spans or values in meta.",
+      "spotlightIds": ["cleaned-response"]
+    }
+  ]
+}

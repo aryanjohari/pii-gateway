@@ -32,55 +32,22 @@ What was designed here (not stock framework defaults):
 5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once and injected into pure pipeline functions for predictable memory and testability.
 6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS (see `architecture.plan.md` changelog).
 
+## C4 overview
+
+Formal C4 views (no Code level):
+
+| Level | Link |
+|-------|------|
+| Index | [docs/c4/README.md](c4/README.md) |
+| C1 Context | [c4/1-context.mmd](c4/1-context.mmd) · [notes](c4/1-context.md) |
+| C2 Containers | [c4/2-containers.mmd](c4/2-containers.mmd) · [notes](c4/2-containers.md) |
+| C3 `pii-gateway` | [c4/3-components/pii-gateway.mmd](c4/3-components/pii-gateway.mmd) · [notes](c4/3-components/pii-gateway.md) |
+
+Portfolio map IR (C2-shaped): [architecture.graph.json](architecture.graph.json). Visitor Mermaid: [architecture.mmd](architecture.mmd). Project card: [`portfolio.yaml`](../portfolio.yaml).
+
 ## System overview
 
-Canonical diagram: [`docs/architecture.mmd`](architecture.mmd) (also linked from `portfolio.yaml` for the portfolio site).
-
-```mermaid
-flowchart TB
-  subgraph callers["Callers"]
-    APP[Apps / workers / scripts]
-    AUTO[Cron or internal automation]
-  end
-
-  subgraph gw["PII Gateway — single FastAPI container"]
-    SAN[POST /v1/sanitize]
-    JOBS[POST /internal/jobs/*]
-    HZ[GET /healthz]
-    AUTH[API-key auth + correlation ID]
-    POL[Mounted policy YAML/JSON]
-    PIPE[Sanitize pipeline]
-    PR[Presidio engines — lifespan singleton]
-    SCH[Optional APScheduler]
-
-    SAN --> AUTH
-    JOBS --> AUTH
-    AUTH --> PIPE
-    POL --> PIPE
-    PIPE --> PR
-    SCH -.-> JOBS
-  end
-
-  subgraph inbound["Batch / file sources"]
-    PG[(PostgreSQL read-only exports)]
-    LOC[Local CSV / JSON inbox]
-    S3IN[S3-compatible inbox]
-  end
-
-  subgraph out["Artifact storage"]
-    DISK[Local volume]
-    S3OUT[S3-compatible bucket]
-  end
-
-  APP -->|JSON + X-API-Key| SAN
-  AUTO -->|internal key| JOBS
-  PG --> PIPE
-  LOC --> PIPE
-  S3IN --> PIPE
-  PIPE -->|optional raw / cleaned| DISK
-  PIPE -->|optional raw / cleaned| S3OUT
-  HZ -.-> gw
-```
+Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy file and local volume mounts. Canonical visitor diagram: [architecture.mmd](architecture.mmd) (aligned with [C2](c4/2-containers.mmd)). Browser helper: [view-architecture.html](view-architecture.html).
 
 ## Key components
 

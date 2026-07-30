@@ -1,0 +1,22 @@
+%% C1 System Context — PII Gateway
+%% View: https://mermaid.live
+
+C4Context
+  title System Context — PII Gateway
+
+  Person(integrator, "App integrator", "Builds apps, workers, or scripts that call the sanitize API")
+  Person(operator, "Operator", "Mounts policy file, sets env secrets, runs Compose")
+  Person(automator, "Automation caller", "Triggers internal jobs via HTTP or relies on in-process scheduler")
+
+  System(gw, "PII Gateway", "Single FastAPI container: redact text/JSON via Presidio + policy; optional batch and artifacts")
+
+  System_Ext(postgres, "PostgreSQL", "Optional read-only exports via named SQL in policy")
+  System_Ext(s3, "S3-compatible storage", "Optional file inbox and/or outbound artifacts (MinIO, R2, AWS S3)")
+  System_Ext(disk, "Local volume", "Default artifact root and gateway state (cursors, processed-file index)")
+
+  Rel(integrator, gw, "POST /v1/sanitize with X-API-Key")
+  Rel(automator, gw, "POST /internal/jobs/* with X-Internal-Job-Key")
+  Rel(operator, gw, "Deploys container; mounts policy; configures env")
+  Rel(gw, postgres, "Optional named SQL batch reads")
+  Rel(gw, s3, "Optional inbox list/get and artifact put")
+  Rel(gw, disk, "Optional raw/cleaned writes; state JSON")

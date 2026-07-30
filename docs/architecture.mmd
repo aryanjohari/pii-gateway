@@ -1,47 +1,37 @@
-%% PII Gateway — portfolio / How it works diagram
-%% Canonical Mermaid source. Keep in sync with any embedded copy in docs.
+%% PII Gateway — portfolio / How it works diagram (aligned with C2)
+%% Canonical Mermaid source. Keep in sync with docs/c4/2-containers.* and architecture.graph.json.
 %% View: https://mermaid.live  |  local: open docs/view-architecture.html
 
 flowchart TB
-  subgraph callers["Callers"]
-    APP[Apps / workers / scripts]
-    AUTO[Cron or internal automation]
+  subgraph inputs["Inputs"]
+    APP[Apps / scripts]
+    AUTO[Automation]
+    PG[(PostgreSQL)]
+    INBOX[CSV / JSON inbox]
   end
 
-  subgraph gw["PII Gateway — single FastAPI container"]
-    SAN[POST /v1/sanitize]
-    JOBS[POST /internal/jobs/*]
+  subgraph core["PII Gateway — single FastAPI container"]
+    SAN[Sanitize API<br/>POST /v1/sanitize]
+    JOBS[Batch jobs<br/>POST /internal/jobs/*]
     HZ[GET /healthz]
-    AUTH[API-key auth + correlation ID]
-    POL[Mounted policy YAML/JSON]
+    POL[Policy file]
     PIPE[Sanitize pipeline]
-    PR[Presidio engines — lifespan singleton]
-    SCH[Optional APScheduler]
-
-    SAN --> AUTH
-    JOBS --> AUTH
-    AUTH --> PIPE
-    POL --> PIPE
-    PIPE --> PR
-    SCH -.-> JOBS
+    PR[Presidio engines]
   end
 
-  subgraph inbound["Batch / file sources"]
-    PG[(PostgreSQL read-only exports)]
-    LOC[Local CSV / JSON inbox]
-    S3IN[S3-compatible inbox]
-  end
-
-  subgraph out["Artifact storage"]
-    DISK[Local volume]
-    S3OUT[S3-compatible bucket]
+  subgraph outputs["Outputs"]
+    RESP[Cleaned response]
+    ART[(Artifacts<br/>local or S3)]
   end
 
   APP -->|JSON + X-API-Key| SAN
-  AUTO -->|internal key| JOBS
-  PG --> PIPE
-  LOC --> PIPE
-  S3IN --> PIPE
-  PIPE -->|optional raw / cleaned| DISK
-  PIPE -->|optional raw / cleaned| S3OUT
-  HZ -.-> gw
+  AUTO -.->|internal key| JOBS
+  PG -.->|named SQL| JOBS
+  INBOX -.->|local or S3| JOBS
+  SAN --> PIPE
+  JOBS -.-> PIPE
+  POL --> PIPE
+  PIPE --> PR
+  PIPE --> RESP
+  PIPE -.->|optional raw / cleaned| ART
+  HZ -.-> core

@@ -1,0 +1,29 @@
+%% C3 Components — pii-gateway container
+%% View: https://mermaid.live
+
+C4Component
+  title Components — pii-gateway
+
+  Container_Boundary(gw, "pii-gateway") {
+    Component(sanitize_api, "Sanitize API", "POST /v1/sanitize", "Realtime text + structured JSON")
+    Component(internal_jobs, "Internal jobs API", "POST /internal/jobs/*", "postgres-batch, file-ingest")
+    Component(healthz, "Healthz", "GET /healthz", "Liveness")
+    Component(auth_mw, "Auth + correlation", "middleware / auth", "API keys; X-Correlation-ID")
+    Component(policy_loader, "Policy loader", "config_loader", "Loads mounted YAML/JSON at startup")
+    Component(pipeline, "Sanitize pipeline", "core/sanitize_*", "Field rules + NLP walk")
+    Component(presidio, "Presidio engines", "Analyzer + Anonymizer", "Lifespan singleton")
+    Component(connectors, "Connectors", "connectors/", "Postgres stream, CSV/JSON, S3 inbox")
+    Component(jobs_sched, "Jobs + scheduler", "jobs/", "Batch runners; optional APScheduler")
+    Component(storage_state, "Storage + state", "storage/ + state_store", "Local or S3 outbound; cursors/index")
+  }
+
+  Rel(sanitize_api, auth_mw, "Requires X-API-Key")
+  Rel(internal_jobs, auth_mw, "Requires X-Internal-Job-Key")
+  Rel(auth_mw, pipeline, "Authorized request")
+  Rel(policy_loader, pipeline, "Policy rules")
+  Rel(pipeline, presidio, "Analyze / anonymize")
+  Rel(internal_jobs, jobs_sched, "Triggers job")
+  Rel(jobs_sched, connectors, "Loads rows/files")
+  Rel(jobs_sched, pipeline, "Sanitizes batch")
+  Rel(pipeline, storage_state, "Optional raw/cleaned artifacts")
+  Rel(jobs_sched, storage_state, "NDJSON + cursor/index")

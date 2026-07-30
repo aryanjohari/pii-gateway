@@ -1,0 +1,27 @@
+%% C2 Containers — PII Gateway (default portfolio map)
+%% View: https://mermaid.live
+%% Prefer C4Container; if your renderer lacks C4, use the flowchart below the comment block.
+
+C4Container
+  title Containers — PII Gateway
+
+  Person(integrator, "App integrator", "HTTP sanitize callers")
+  Person(automator, "Automation", "Internal job triggers or cron-like clients")
+  Person(operator, "Operator", "Policy mount + env")
+
+  System_Boundary(sys, "PII Gateway deployment") {
+    Container(gw, "pii-gateway", "FastAPI / Uvicorn", "POST /v1/sanitize, POST /internal/jobs/*, GET /healthz; optional APScheduler; Presidio at lifespan")
+    ContainerDb(policy, "policy-file", "YAML/JSON mount", "Entities, field rules, named SQL, inbox config — non-secret")
+    ContainerDb(local, "local-volume", "Filesystem", "Artifacts + GATEWAY_STATE_DIR cursors/index")
+  }
+
+  System_Ext(postgres, "PostgreSQL", "Optional batch source")
+  System_Ext(s3, "S3-compatible", "Optional inbox + outbound artifacts")
+
+  Rel(integrator, gw, "Uploads JSON/text", "POST /v1/sanitize + X-API-Key")
+  Rel(automator, gw, "Triggers batch/file jobs", "POST /internal/jobs/* + X-Internal-Job-Key")
+  Rel(operator, policy, "Reviews and mounts policy")
+  Rel(gw, policy, "Reads policy at startup")
+  Rel(gw, postgres, "Optional named SQL reads")
+  Rel(gw, s3, "Optional inbox scan / artifact put")
+  Rel(gw, local, "Optional artifacts + state writes")
