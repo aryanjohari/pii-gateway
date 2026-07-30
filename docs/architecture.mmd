@@ -1,37 +1,26 @@
-%% PII Gateway — portfolio / How it works diagram (aligned with C2)
-%% Canonical Mermaid source. Keep in sync with docs/c4/2-containers.* and architecture.graph.json.
+%% PII Gateway — C2 flowchart alias (NON-CANONICAL)
+%% Source of truth: docs/c4/2-containers.mmd (+ docs/c4/portfolio-map.json)
+%% Keep this file aligned with C2 containers only — no pipeline/Presidio boxes.
 %% View: https://mermaid.live  |  local: open docs/view-architecture.html
 
 flowchart TB
-  subgraph inputs["Inputs"]
-    APP[Apps / scripts]
-    AUTO[Automation]
-    PG[(PostgreSQL)]
-    INBOX[CSV / JSON inbox]
+  integrator[App integrator]
+  automator[Automation]
+  operator[Operator]
+
+  subgraph deployment["PII Gateway deployment"]
+    gw["pii-gateway<br/>FastAPI / Uvicorn"]
+    policy[(policy-file)]
+    local[(local-volume)]
   end
 
-  subgraph core["PII Gateway — single FastAPI container"]
-    SAN[Sanitize API<br/>POST /v1/sanitize]
-    JOBS[Batch jobs<br/>POST /internal/jobs/*]
-    HZ[GET /healthz]
-    POL[Policy file]
-    PIPE[Sanitize pipeline]
-    PR[Presidio engines]
-  end
+  postgres[(PostgreSQL)]
+  s3[(S3-compatible)]
 
-  subgraph outputs["Outputs"]
-    RESP[Cleaned response]
-    ART[(Artifacts<br/>local or S3)]
-  end
-
-  APP -->|JSON + X-API-Key| SAN
-  AUTO -.->|internal key| JOBS
-  PG -.->|named SQL| JOBS
-  INBOX -.->|local or S3| JOBS
-  SAN --> PIPE
-  JOBS -.-> PIPE
-  POL --> PIPE
-  PIPE --> PR
-  PIPE --> RESP
-  PIPE -.->|optional raw / cleaned| ART
-  HZ -.-> core
+  integrator -->|"POST /v1/sanitize + X-API-Key"| gw
+  automator -->|"POST /internal/jobs/* + X-Internal-Job-Key"| gw
+  operator --> policy
+  gw --> policy
+  gw -.->|optional named SQL| postgres
+  gw -.->|optional inbox / artifacts| s3
+  gw -->|artifacts + state| local

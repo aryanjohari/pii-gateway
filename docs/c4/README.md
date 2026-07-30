@@ -1,29 +1,31 @@
 # C4 diagrams — PII Gateway
 
-C4 views of this repository, grounded in the running code (FastAPI entrypoint, Compose, routes, jobs, storage). There is **no Code-level** diagram.
+Official-style C4 views built **bottom-up from this repo’s code**. Levels stop at **Components** (no Code / class diagrams).
 
-## How to read
+## How to read (zoom path)
 
 | Level | File | What it shows |
 |-------|------|----------------|
 | **C1 Context** | [1-context.mmd](1-context.mmd) · [notes](1-context.md) | People + this system as one box + external systems |
-| **C2 Containers** | [2-containers.mmd](2-containers.mmd) · [notes](2-containers.md) | Deployable pieces and data stores — **default portfolio map** |
-| **C3 Components** | [3-components/](3-components/) | Internals of containers that need a zoom |
+| **C2 Containers** | [2-containers.mmd](2-containers.mmd) · [notes](2-containers.md) | What actually runs / mounts / stores data |
+| **C3 Components** | [3-components/pii-gateway](3-components/pii-gateway.mmd) · [notes](3-components/pii-gateway.md) | Internals of the FastAPI container |
 
-Start at C1 for orientation, use C2 for “what runs where,” open C3 only when you need API internals.
+**Zoom:** Context system box → Containers → Components (`pii-gateway` only). Machine index: [portfolio-map.json](portfolio-map.json).
 
-Visitor-facing narrative: [../ARCHITECTURE.md](../ARCHITECTURE.md). Project card: [../../portfolio.yaml](../../portfolio.yaml).
+Visitor narrative (premise, unique approach, tradeoffs): [../ARCHITECTURE.md](../ARCHITECTURE.md). Project card: [../../portfolio.yaml](../../portfolio.yaml).
 
-## Portfolio / graph
+## Portfolio
 
 | Artifact | Role |
 |----------|------|
-| [../architecture.graph.json](../architecture.graph.json) | Preferred map IR for aryan-portfolio (`graph:` in `portfolio.yaml`) |
-| [../architecture.mmd](../architecture.mmd) | Visitor Mermaid fallback (`diagram:` in `portfolio.yaml`) |
-| [portfolio-map.json](portfolio-map.json) | Which container IDs have C3 component diagrams |
+| [portfolio-map.json](portfolio-map.json) | **Canonical** zoom index for a future Context→Containers→Components UI |
+| [2-containers.mmd](2-containers.mmd) | Default Mermaid diagram linked from `portfolio.yaml` (`diagram:`) |
+| [../architecture.mmd](../architecture.mmd) | Optional flowchart **alias** of C2 for renderers without Mermaid C4 |
 
-Open Mermaid sources in [mermaid.live](https://mermaid.live) or [../view-architecture.html](../view-architecture.html) (loads `architecture.mmd`).
+Archived (do not use): [../archive/architecture.graph.json](../archive/architecture.graph.json).
+
+Open Mermaid in [mermaid.live](https://mermaid.live) or [../view-architecture.html](../view-architecture.html).
 
 ## Stable IDs
 
-Machine IDs use kebab-case (`pii-gateway`, `policy-file`, `s3-compatible`). Diagram labels stay plain English for GitHub visitors and interviewers.
+Machine IDs are kebab-case (`pii-gateway`, `policy-file`, `local-volume`, `s3-compatible`). Diagram labels stay plain English.

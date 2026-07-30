@@ -2,7 +2,7 @@
 
 > **One-line:** A Docker-friendly **Presidio + FastAPI** service that scrubs **plain text** and **nested JSON** from a mounted **policy file**, with optional **batch/file ingestion** and **artifact storage**. It centralizes redaction; it is **not** a compliance program or database firewall (personal / learning project).
 
-Visitor card copy lives in [`portfolio.yaml`](portfolio.yaml). Design deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). C4 views: [`docs/c4/`](docs/c4/). Diagram / portfolio map: [`docs/architecture.mmd`](docs/architecture.mmd), [`docs/architecture.graph.json`](docs/architecture.graph.json).
+Visitor card copy lives in [`portfolio.yaml`](portfolio.yaml). Design deep-dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Canonical C4: [`docs/c4/`](docs/c4/) · [`docs/c4/portfolio-map.json`](docs/c4/portfolio-map.json).
 
 ---
 
@@ -20,7 +20,7 @@ Batch SQL must be **reviewed, parameterized, and read-only**—this is not a saf
 2. **Realtime** — `POST /v1/sanitize` with `X-API-Key`; free text + nested `structured` JSON through the same pipeline (per-field rules, fail-closed NLP on undeclared strings).
 3. **Batch / files** — `/internal/jobs/*` (or scheduler) for named Postgres queries and inbox scans.
 
-For components, data flow, unique design choices, and limitations, read **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**. View the flowchart via [docs/view-architecture.html](docs/view-architecture.html) or paste [`docs/architecture.mmd`](docs/architecture.mmd) into [mermaid.live](https://mermaid.live).
+For components, data flow, unique design choices, and limitations, read **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**. C4 levels: [docs/c4/README.md](docs/c4/README.md). Optional flowchart viewer: [docs/view-architecture.html](docs/view-architecture.html).
 
 ---
 

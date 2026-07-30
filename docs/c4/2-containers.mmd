@@ -1,6 +1,7 @@
-%% C2 Containers — PII Gateway (default portfolio map)
+%% C2 Containers — PII Gateway
+%% Evidence: Dockerfile, docker-compose*.yml, main.py, settings.py, storage/, state_store.py
 %% View: https://mermaid.live
-%% Prefer C4Container; if your renderer lacks C4, use the flowchart below the comment block.
+%% Prefer C4Container; flowchart equivalent commented below if your renderer lacks C4.
 
 C4Container
   title Containers — PII Gateway
@@ -25,3 +26,23 @@ C4Container
   Rel(gw, postgres, "Optional named SQL reads")
   Rel(gw, s3, "Optional inbox scan / artifact put")
   Rel(gw, local, "Optional artifacts + state writes")
+
+%% --- Flowchart equivalent (uncomment if C4Container unsupported) ---
+%% flowchart TB
+%%   integrator[App integrator]
+%%   automator[Automation]
+%%   operator[Operator]
+%%   subgraph deployment["PII Gateway deployment"]
+%%     gw[pii-gateway<br/>FastAPI / Uvicorn]
+%%     policy[(policy-file)]
+%%     local[(local-volume)]
+%%   end
+%%   postgres[(PostgreSQL)]
+%%   s3[(S3-compatible)]
+%%   integrator -->|POST /v1/sanitize| gw
+%%   automator -->|POST /internal/jobs/*| gw
+%%   operator --> policy
+%%   gw --> policy
+%%   gw -.-> postgres
+%%   gw -.-> s3
+%%   gw --> local

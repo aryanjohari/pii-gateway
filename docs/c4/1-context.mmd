@@ -1,4 +1,5 @@
 %% C1 System Context — PII Gateway
+%% Evidence: src/pii_gateway/main.py, docker-compose*.yml, settings.py, routes_*.py
 %% View: https://mermaid.live
 
 C4Context
@@ -8,15 +9,31 @@ C4Context
   Person(operator, "Operator", "Mounts policy file, sets env secrets, runs Compose")
   Person(automator, "Automation caller", "Triggers internal jobs via HTTP or relies on in-process scheduler")
 
-  System(gw, "PII Gateway", "Single FastAPI container: redact text/JSON via Presidio + policy; optional batch and artifacts")
+  System(gw, "PII Gateway", "Self-hosted FastAPI service: redact text/JSON via Presidio + policy; optional batch and artifacts")
 
   System_Ext(postgres, "PostgreSQL", "Optional read-only exports via named SQL in policy")
   System_Ext(s3, "S3-compatible storage", "Optional file inbox and/or outbound artifacts (MinIO, R2, AWS S3)")
   System_Ext(disk, "Local volume", "Default artifact root and gateway state (cursors, processed-file index)")
 
-  Rel(integrator, gw, "POST /v1/sanitize with X-API-Key")
-  Rel(automator, gw, "POST /internal/jobs/* with X-Internal-Job-Key")
+  Rel(integrator, gw, "Sends text/JSON to sanitize", "POST /v1/sanitize + X-API-Key")
+  Rel(automator, gw, "Triggers batch/file jobs", "POST /internal/jobs/* + X-Internal-Job-Key")
   Rel(operator, gw, "Deploys container; mounts policy; configures env")
   Rel(gw, postgres, "Optional named SQL batch reads")
   Rel(gw, s3, "Optional inbox list/get and artifact put")
   Rel(gw, disk, "Optional raw/cleaned writes; state JSON")
+
+%% --- Flowchart equivalent (uncomment if C4Context unsupported) ---
+%% flowchart LR
+%%   integrator[App integrator]
+%%   operator[Operator]
+%%   automator[Automation caller]
+%%   gw[PII Gateway]
+%%   postgres[(PostgreSQL)]
+%%   s3[(S3-compatible)]
+%%   disk[(Local volume)]
+%%   integrator -->|POST /v1/sanitize| gw
+%%   automator -->|POST /internal/jobs/*| gw
+%%   operator -->|deploy + policy + env| gw
+%%   gw -.->|named SQL| postgres
+%%   gw -.->|inbox / artifacts| s3
+%%   gw -->|artifacts + state| disk

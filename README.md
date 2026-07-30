@@ -193,8 +193,8 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Architecture
 
 Design case study and tradeoffs: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**  
-Mermaid source (portfolio diagram): **[docs/architecture.mmd](docs/architecture.mmd)**  
-Browser viewer: [docs/view-architecture.html](docs/view-architecture.html) (`cd docs && python3 -m http.server 8765`)  
+C4 diagrams (canonical): **[docs/c4/](docs/c4/)** · zoom map [docs/c4/portfolio-map.json](docs/c4/portfolio-map.json)  
+Browser viewer (C2 flowchart alias): [docs/view-architecture.html](docs/view-architecture.html) (`cd docs && python3 -m http.server 8765`)  
 Narrative overview: [PROJECT.md](PROJECT.md)
 
 ---

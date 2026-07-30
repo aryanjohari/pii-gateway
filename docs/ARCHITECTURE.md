@@ -32,22 +32,23 @@ What was designed here (not stock framework defaults):
 5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once and injected into pure pipeline functions for predictable memory and testability.
 6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS (see `architecture.plan.md` changelog).
 
-## C4 overview
+## C4 diagrams (canonical)
 
-Formal C4 views (no Code level):
+Diagrams are **bottom-up from code** and live under [`docs/c4/`](c4/). Do not treat archived flowchart IR as source of truth.
 
 | Level | Link |
 |-------|------|
-| Index | [docs/c4/README.md](c4/README.md) |
+| Index + zoom path | [docs/c4/README.md](c4/README.md) |
 | C1 Context | [c4/1-context.mmd](c4/1-context.mmd) · [notes](c4/1-context.md) |
 | C2 Containers | [c4/2-containers.mmd](c4/2-containers.mmd) · [notes](c4/2-containers.md) |
 | C3 `pii-gateway` | [c4/3-components/pii-gateway.mmd](c4/3-components/pii-gateway.mmd) · [notes](c4/3-components/pii-gateway.md) |
+| Portfolio zoom map | [c4/portfolio-map.json](c4/portfolio-map.json) |
 
-Portfolio map IR (C2-shaped): [architecture.graph.json](architecture.graph.json). Visitor Mermaid: [architecture.mmd](architecture.mmd). Project card: [`portfolio.yaml`](../portfolio.yaml).
+Project card: [`portfolio.yaml`](../portfolio.yaml). Optional C2 flowchart alias (non-canonical): [architecture.mmd](architecture.mmd). Browser helper: [view-architecture.html](view-architecture.html).
 
 ## System overview
 
-Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy file and local volume mounts. Canonical visitor diagram: [architecture.mmd](architecture.mmd) (aligned with [C2](c4/2-containers.mmd)). Browser helper: [view-architecture.html](view-architecture.html).
+Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy file and local volume mounts. Start at **C1**, use **C2** for deployables, open **C3** for module boundaries inside `pii-gateway`.
 
 ## Key components
 
@@ -77,6 +78,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 - **Local vs S3 dedupe** — Local fingerprints use `mtime_ns` + size; S3 path uses **size only** (content-same-size replacement can be skipped).
 - **Auth ordering** — Body validation can return 422 before auth; misconfigured key returns 503 even if a key header is present.
 - **Event-loop hygiene** — Heavy CSV/JSON/local writes use `asyncio.to_thread` where needed.
+- **Scheduler** — When enabled, file-ingest is always interval-scheduled; Postgres cron only when cron env + policy enabled.
 
 ## Tradeoffs and limitations
 

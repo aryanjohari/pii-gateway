@@ -1,29 +1,69 @@
 %% C3 Components — pii-gateway container
+%% Evidence: src/pii_gateway/** (see companion .md)
 %% View: https://mermaid.live
 
 C4Component
   title Components — pii-gateway
 
   Container_Boundary(gw, "pii-gateway") {
-    Component(sanitize_api, "Sanitize API", "POST /v1/sanitize", "Realtime text + structured JSON")
-    Component(internal_jobs, "Internal jobs API", "POST /internal/jobs/*", "postgres-batch, file-ingest")
-    Component(healthz, "Healthz", "GET /healthz", "Liveness")
-    Component(auth_mw, "Auth + correlation", "middleware / auth", "API keys; X-Correlation-ID")
-    Component(policy_loader, "Policy loader", "config_loader", "Loads mounted YAML/JSON at startup")
-    Component(pipeline, "Sanitize pipeline", "core/sanitize_*", "Field rules + NLP walk")
-    Component(presidio, "Presidio engines", "Analyzer + Anonymizer", "Lifespan singleton")
-    Component(connectors, "Connectors", "connectors/", "Postgres stream, CSV/JSON, S3 inbox")
-    Component(jobs_sched, "Jobs + scheduler", "jobs/", "Batch runners; optional APScheduler")
-    Component(storage_state, "Storage + state", "storage/ + state_store", "Local or S3 outbound; cursors/index")
+    Component(sanitize_api, "Sanitize API", "api/routes_sanitize.py", "POST /v1/sanitize — realtime text + structured JSON")
+    Component(internal_jobs, "Internal jobs API", "api/routes_internal.py", "POST /internal/jobs/postgres-batch and file-ingest")
+    Component(healthz, "Healthz", "main.py", "GET /healthz liveness")
+    Component(correlation, "Correlation middleware", "api/middleware.py", "X-Correlation-ID on every request")
+    Component(auth, "API key auth", "api/auth.py", "X-API-Key and X-Internal-Job-Key helpers")
+    Component(settings_env, "Settings", "settings.py", "12-factor env: secrets, DSNs, storage, scheduler flags")
+    Component(policy_loader, "Policy loader", "config_loader + policy_schema", "Mounted YAML/JSON validated at startup")
+    Component(pipeline, "Sanitize pipeline", "core/sanitize_*", "Field rules + fail-closed NLP walk; counts-only summary")
+    Component(presidio, "Presidio engines", "lifespan in main.py", "Analyzer + Anonymizer singleton per process")
+    Component(connectors, "Connectors", "connectors/", "Postgres stream, CSV/JSON parsers, S3 inbox list/get")
+    Component(jobs_sched, "Jobs + scheduler", "jobs/", "Batch runners; optional AsyncIOScheduler")
+    Component(storage_state, "Storage + state", "storage/ + state_store", "Local or S3 outbound; cursors + processed-file index")
+    Component(logging, "Structured logging", "logging_config.py", "Stdout JSON; allow-listed fields only")
   }
 
-  Rel(sanitize_api, auth_mw, "Requires X-API-Key")
-  Rel(internal_jobs, auth_mw, "Requires X-Internal-Job-Key")
-  Rel(auth_mw, pipeline, "Authorized request")
-  Rel(policy_loader, pipeline, "Policy rules")
-  Rel(pipeline, presidio, "Analyze / anonymize")
-  Rel(internal_jobs, jobs_sched, "Triggers job")
+  Rel(sanitize_api, auth, "verify_http_auth")
+  Rel(internal_jobs, auth, "verify_internal_job")
+  Rel(sanitize_api, pipeline, "sanitize_payload")
+  Rel(policy_loader, pipeline, "GatewayPolicy rules")
+  Rel(settings_env, policy_loader, "PII_GATEWAY_CONFIG_PATH")
+  Rel(pipeline, presidio, "analyze / anonymize")
+  Rel(sanitize_api, storage_state, "Optional raw/cleaned artifacts")
+  Rel(internal_jobs, jobs_sched, "Triggers job runners")
   Rel(jobs_sched, connectors, "Loads rows/files")
-  Rel(jobs_sched, pipeline, "Sanitizes batch")
-  Rel(pipeline, storage_state, "Optional raw/cleaned artifacts")
+  Rel(jobs_sched, pipeline, "Sanitizes batch rows")
   Rel(jobs_sched, storage_state, "NDJSON + cursor/index")
+  Rel(correlation, sanitize_api, "Attaches correlation_id")
+  Rel(sanitize_api, logging, "sanitize_complete events")
+
+%% --- Flowchart equivalent (uncomment if C4Component unsupported) ---
+%% flowchart TB
+%%   subgraph api["HTTP surface"]
+%%     sanitize_api[Sanitize API]
+%%     internal_jobs[Internal jobs API]
+%%     healthz[Healthz]
+%%     correlation[Correlation middleware]
+%%     auth[API key auth]
+%%   end
+%%   subgraph core["Redaction"]
+%%     settings_env[Settings]
+%%     policy_loader[Policy loader]
+%%     pipeline[Sanitize pipeline]
+%%     presidio[Presidio engines]
+%%   end
+%%   subgraph batch["Batch path"]
+%%     jobs_sched[Jobs + scheduler]
+%%     connectors[Connectors]
+%%   end
+%%   storage_state[Storage + state]
+%%   logging[Structured logging]
+%%   sanitize_api --> auth --> pipeline
+%%   internal_jobs --> auth
+%%   internal_jobs --> jobs_sched
+%%   settings_env --> policy_loader --> pipeline
+%%   pipeline --> presidio
+%%   jobs_sched --> connectors
+%%   jobs_sched --> pipeline
+%%   jobs_sched --> storage_state
+%%   sanitize_api --> storage_state
+%%   correlation --> sanitize_api
+%%   sanitize_api --> logging

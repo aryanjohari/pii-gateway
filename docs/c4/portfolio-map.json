@@ -1,3 +1,31 @@
 {
-  "containerIdsWithComponents": ["pii-gateway"]
+  "version": 1,
+  "defaultLevel": "context",
+  "context": { "path": "docs/c4/1-context.mmd" },
+  "containers": { "path": "docs/c4/2-containers.mmd" },
+  "zoom": [
+    {
+      "id": "pii-gateway-system",
+      "label": "PII Gateway",
+      "fromLevel": "context",
+      "toLevel": "containers",
+      "matchLabels": ["PII Gateway"]
+    },
+    {
+      "id": "pii-gateway",
+      "label": "pii-gateway",
+      "fromLevel": "containers",
+      "toLevel": "components",
+      "matchLabels": ["pii-gateway", "FastAPI / Uvicorn"],
+      "componentsPath": "docs/c4/3-components/pii-gateway.mmd"
+    }
+  ],
+  "componentZooms": [
+    {
+      "id": "pii-gateway",
+      "label": "pii-gateway",
+      "path": "docs/c4/3-components/pii-gateway.mmd",
+      "markdownPath": "docs/c4/3-components/pii-gateway.md"
+    }
+  ]
 }

@@ -47,12 +47,15 @@
   <body>
     <h1>PII Gateway — architecture</h1>
     <p>
-      Canonical source: <code>docs/architecture.mmd</code>. Edit that file, then view here (with a
-      local server), see the case study in <code>docs/ARCHITECTURE.md</code>, or paste into
+      Canonical C4: <code>docs/c4/</code> (index
+      <a href="./c4/README.md">c4/README.md</a>). This page loads the C2 flowchart
+      <strong>alias</strong> <code>architecture.mmd</code> (aligned with
+      <code>c4/2-containers.mmd</code>) for broad Mermaid support. Case study:
+      <a href="./ARCHITECTURE.md">ARCHITECTURE.md</a> ·
       <a href="https://mermaid.live" rel="noreferrer">mermaid.live</a>.
     </p>
     <p>
-      <strong>Local server (loads <code>architecture.mmd</code> automatically):</strong>
+      <strong>Local server:</strong>
       <code>cd docs &amp;&amp; python3 -m http.server 8765</code>
       then open <code>http://127.0.0.1:8765/view-architecture.html</code>.
     </p>
@@ -62,48 +65,26 @@
       mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "strict" });
 
       const embeddedFallback = `flowchart TB
-  subgraph callers["Callers"]
-    APP[Apps / workers / scripts]
-    AUTO[Cron or internal automation]
+  integrator[App integrator]
+  automator[Automation]
+  operator[Operator]
+
+  subgraph deployment["PII Gateway deployment"]
+    gw["pii-gateway — FastAPI / Uvicorn"]
+    policy[(policy-file)]
+    local[(local-volume)]
   end
 
-  subgraph gw["PII Gateway — single FastAPI container"]
-    SAN[POST /v1/sanitize]
-    JOBS[POST /internal/jobs/*]
-    HZ[GET /healthz]
-    AUTH[API-key auth + correlation ID]
-    POL[Mounted policy YAML/JSON]
-    PIPE[Sanitize pipeline]
-    PR[Presidio engines — lifespan singleton]
-    SCH[Optional APScheduler]
+  postgres[(PostgreSQL)]
+  s3[(S3-compatible)]
 
-    SAN --> AUTH
-    JOBS --> AUTH
-    AUTH --> PIPE
-    POL --> PIPE
-    PIPE --> PR
-    SCH -.-> JOBS
-  end
-
-  subgraph inbound["Batch / file sources"]
-    PG[(PostgreSQL read-only exports)]
-    LOC[Local CSV / JSON inbox]
-    S3IN[S3-compatible inbox]
-  end
-
-  subgraph out["Artifact storage"]
-    DISK[Local volume]
-    S3OUT[S3-compatible bucket]
-  end
-
-  APP -->|JSON + X-API-Key| SAN
-  AUTO -->|internal key| JOBS
-  PG --> PIPE
-  LOC --> PIPE
-  S3IN --> PIPE
-  PIPE -->|optional raw / cleaned| DISK
-  PIPE -->|optional raw / cleaned| S3OUT
-  HZ -.-> gw`;
+  integrator -->|"POST /v1/sanitize + X-API-Key"| gw
+  automator -->|"POST /internal/jobs/* + X-Internal-Job-Key"| gw
+  operator --> policy
+  gw --> policy
+  gw -.->|optional named SQL| postgres
+  gw -.->|optional inbox / artifacts| s3
+  gw -->|artifacts + state| local`;
 
       async function loadDef() {
         if (globalThis.location?.protocol !== "http:" && globalThis.location?.protocol !== "https:") {

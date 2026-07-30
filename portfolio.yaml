@@ -16,7 +16,8 @@ stack:
   - Docker
   - APScheduler
 status: active
-diagram: docs/architecture.mmd
-graph: docs/architecture.graph.json
+diagram: docs/c4/2-containers.mmd
+c4: docs/c4/portfolio-map.json
 links:
   github: https://github.com/aryanjohari/pii-gateway
+  docs: https://github.com/aryanjohari/pii-gateway/blob/main/docs/c4/README.md
