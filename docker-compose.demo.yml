@@ -1,0 +1,15 @@
+# Optional overlay for a public / home-lab demo edge.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build
+# For Pi + tunnel, prefer binding 127.0.0.1:8000 (see docs/DEPLOY_PI.md).
+services:
+  pii-gateway:
+    restart: unless-stopped
+    volumes:
+      - ./config/examples/config.demo.yaml:/etc/pii-gateway/config.yaml:ro
+    environment:
+      PII_GATEWAY_CONFIG_PATH: /etc/pii-gateway/config.yaml
+      DISABLE_SCHEDULER: "true"
+      SANITIZE_RATE_LIMIT_PER_MINUTE: "30"
+      SANITIZE_MAX_BODY_BYTES: "65536"
+      SANITIZE_MAX_CHARS: "10000"

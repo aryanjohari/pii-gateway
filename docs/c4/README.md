@@ -12,7 +12,7 @@ Official-style C4 views built **bottom-up from this repo’s code**. Levels stop
 
 **Zoom:** Context system box → Containers → Components (`pii-gateway` only). Machine index: [portfolio-map.json](portfolio-map.json).
 
-Visitor narrative (premise, unique approach, tradeoffs): [../ARCHITECTURE.md](../ARCHITECTURE.md). Project card: [../../portfolio.yaml](../../portfolio.yaml).
+Visitor narrative (premise, unique approach, tradeoffs): [../ARCHITECTURE.md](../ARCHITECTURE.md). Project card: [../../portfolio.yaml](../../portfolio.yaml). Home-lab demo host: [../DEPLOY_PI.md](../DEPLOY_PI.md). Landing app: [`../../web/`](../../web/).
 
 ## Portfolio
 

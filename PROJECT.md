@@ -27,6 +27,9 @@ For components, data flow, unique design choices, and limitations, read **[docs/
 ## Current state
 
 - Compose + `/healthz` + authenticated `/v1/sanitize` work as documented in the [README](README.md)
+- Public edge limits: per-IP rate limit + body/character caps (see env in [`.env.example`](.env.example))
+- Product landing + playground: [`web/`](web/) (configure `PII_GATEWAY_API_*`; offline UX if unset)
+- Home-lab demo host checklist (Pi + tunnel): [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md) — physical setup optional
 - Internal batch/file triggers and S3 paths are implemented; not all options are real-world hardened—expect gaps on less-tested connectors
 - **English-only** Presidio language path; NLP false positives/negatives are normal
 - **License:** MIT — [LICENSE](LICENSE)

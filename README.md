@@ -6,6 +6,8 @@ Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that 
 
 **Why:** Centralize scrubbing so analytics, logs, and experiments never need a copy of the same redaction logic in every repo. Not a compliance product or OLTP database proxy.
 
+**Product surface:** landing + playground live under [`web/`](web/) (Vercel). Public demo proxies through a server-side BFF—sample data only. Home-lab API host checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
+
 ---
 
 ## Features (verified in this repo)
@@ -43,6 +45,29 @@ curl -sS -X POST http://localhost:8000/v1/sanitize \
 
 curl -sS http://localhost:8000/healthz
 ```
+
+### Landing page (local)
+
+```bash
+cd web
+cp .env.example .env.local
+# PII_GATEWAY_API_URL=http://127.0.0.1:8000
+# PII_GATEWAY_API_KEY=<same-as-SANITIZE_HTTP_API_KEY>
+npm install && npm run dev
+```
+
+See [`web/README.md`](web/README.md). Offline playground is expected until the gateway URL is configured.
+
+### Container image (GHCR)
+
+Multi-arch images (`linux/amd64`, `linux/arm64` for Raspberry Pi) publish on version tags via [`.github/workflows/publish-image.yml`](.github/workflows/publish-image.yml):
+
+```bash
+docker pull ghcr.io/aryanjohari/pii-gateway:latest
+# or a release tag, e.g. ghcr.io/aryanjohari/pii-gateway:0.1.0
+```
+
+Until the first release workflow has run, build locally with `docker compose build` (works on amd64 and arm64 hosts).
 
 Optional Postgres + MinIO overlay:
 
@@ -86,6 +111,9 @@ uvicorn pii_gateway.main:app --reload
 | `DISABLE_SCHEDULER` | `true` skips APScheduler. |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated; empty disables CORS middleware. |
 | `BATCH_DEMO_FIXTURE` | Synthetic Postgres rows without a real DB. |
+| `SANITIZE_RATE_LIMIT_PER_MINUTE` | Per-client IP cap on `/v1/sanitize` (default `60`; `0` disables). |
+| `SANITIZE_MAX_BODY_BYTES` | Max `Content-Length` for sanitize (default `65536`; `0` disables). |
+| `SANITIZE_MAX_CHARS` | Max total string characters in text+structured (default `10000`; `0` disables). |
 
 Example policy shape:
 
@@ -147,8 +175,12 @@ Success shape:
 |--------|--------------|------|
 | 422 | `validation_error` | Bad body |
 | 401 | `unauthorized` | Wrong/missing key (server key is set) |
+| 413 | `payload_too_large` | Body or character budget exceeded |
+| 429 | `rate_limited` | Per-IP sanitize rate limit exceeded |
 | 503 | `misconfigured` | Server key unset/blank |
 | 500 | `internal_error` | Sanitizer failure |
+
+For a public playground or home-lab demo, use [`config/examples/config.demo.yaml`](config/examples/config.demo.yaml) (`write_raw` / `write_cleaned` false), set the rate/size limits above, `DISABLE_SCHEDULER=true`, and put your site origin in `CORS_ALLOWED_ORIGINS` (or call via a server-side BFF). This is **not** a compliance product—do not send real PII to a public demo. Raspberry Pi checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
 
 OpenAPI: `/docs` when the server is running.
 
@@ -161,7 +193,9 @@ OpenAPI: `/docs` when the server is running.
 
 ### Deploy notes
 
-Compose-first (`docker-compose.yml`; optional Postgres+MinIO overlay). The app listens on plain HTTP `:8000`—terminate TLS at a load balancer or reverse proxy. Conceptual paths (EC2, ECR/ECS + ALB) are the same container with env + volume mounts; no Terraform is required to run the core app.
+Compose-first (`docker-compose.yml`; optional Postgres+MinIO overlay; optional demo overlay `docker-compose.demo.yml`). The app listens on plain HTTP `:8000`—terminate TLS at a reverse proxy or Cloudflare Tunnel ([docs/DEPLOY_PI.md](docs/DEPLOY_PI.md)). Conceptual cloud paths (EC2, ECR/ECS + ALB) are the same container with env + volume mounts; no cloud IaC is required to run the core app.
+
+Multi-arch GHCR publish: tag a release `v*` (or run **Publish image** workflow) → `ghcr.io/aryanjohari/pii-gateway` for `linux/amd64` and `linux/arm64`.
 
 ### HTTP surface
 
@@ -182,8 +216,8 @@ ruff check src tests
 mypy src
 ```
 
-- **Unit** (`tests/unit/`): auth, config loader, text/structured sanitize, paths, CSV/JSON helpers, storage factory, no-logging guard on core modules
-- **Integration** (`tests/integration/`): `TestClient` against the real app (sanitize, internal jobs, correlation ID)
+- **Unit** (`tests/unit/`): auth, config loader, text/structured sanitize, paths, CSV/JSON helpers, storage factory, rate limit, request limits, no-logging guard on core modules
+- **Integration** (`tests/integration/`): `TestClient` against the real app (sanitize, limits, internal jobs, correlation ID)
 - **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Python 3.11/3.12 → spaCy model → ruff → mypy → pytest → `docker build` (3.12)
 
 Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).

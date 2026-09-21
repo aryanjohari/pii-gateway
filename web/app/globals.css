@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0c1222;
+  --paper: #f3f6f4;
+  --mist: #e4ebe6;
+  --line: #c5d0c9;
+  --accent: #0f6b5c;
+  --accent-soft: #d7efe8;
+  --muted: #5a6760;
+  --hero-glow: rgba(15, 107, 92, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 12% -10%, var(--hero-glow), transparent 55%),
+    radial-gradient(900px 500px at 90% 8%, rgba(12, 18, 34, 0.05), transparent 50%),
+    linear-gradient(180deg, #f7faf8 0%, var(--paper) 42%, #eef3f0 100%);
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.7s ease-out both;
+}
+
+.animate-fade {
+  animation: fade-in 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-rise,
+  .animate-fade {
+    animation: none;
+  }
+}

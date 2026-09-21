@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from pii_gateway.api.middleware import CorrelationIdMiddleware
+from pii_gateway.api.rate_limit import create_sliding_window_limiter
 from pii_gateway.api.routes_internal import router as internal_router
 from pii_gateway.api.routes_sanitize import router as sanitize_router
 from pii_gateway.config_loader import load_gateway_policy
@@ -36,6 +37,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.analyzer = analyzer
     app.state.anonymizer = anonymizer
     app.state.storage = create_outbound_storage(settings)
+    app.state.sanitize_rate_allow = create_sliding_window_limiter(
+        settings.sanitize_rate_limit_per_minute,
+        60.0,
+    )
 
     engine: AsyncEngine | None = None
     if settings.postgres_batch_dsn and not settings.batch_demo_fixture:

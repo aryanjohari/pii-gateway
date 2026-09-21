@@ -8,6 +8,8 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from pii_gateway.api.auth import verify_http_auth
 from pii_gateway.api.middleware import get_correlation_id
+from pii_gateway.api.rate_limit import client_rate_limit_key
+from pii_gateway.api.request_limits import enforce_char_budget, enforce_content_length
 from pii_gateway.api.schemas import SanitizeRequest, SanitizeSuccessResponse
 from pii_gateway.core.sanitize_pipeline import sanitize_payload
 from pii_gateway.logging_config import get_logger, log_event
@@ -20,6 +22,22 @@ router = APIRouter(tags=["sanitize"])
 @router.post("/v1/sanitize", response_model=SanitizeSuccessResponse)
 async def sanitize(request: Request, body: SanitizeRequest) -> SanitizeSuccessResponse:
     settings = request.app.state.settings
+    enforce_content_length(request, settings)
+    enforce_char_budget(body, settings)
+
+    rate_allow = getattr(request.app.state, "sanitize_rate_allow", None)
+    if callable(rate_allow):
+        client = request.client.host if request.client else None
+        key = client_rate_limit_key(client, bool(request.headers.get("X-API-Key")))
+        if not rate_allow(key):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "rate_limited",
+                    "message": "Too many sanitize requests; try again later",
+                },
+            )
+
     verify_http_auth(request, settings)
     policy = request.app.state.policy
     analyzer = request.app.state.analyzer

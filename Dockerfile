@@ -7,7 +7,8 @@ ENV PYTHONUNBUFFERED=1 \
 RUN useradd --create-home --uid 10001 appuser
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir . \
+    && python -m spacy download en_core_web_sm
 USER appuser
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \

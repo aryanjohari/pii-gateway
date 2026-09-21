@@ -8,10 +8,13 @@ description: >
   A mounted policy file sets entity types and per-field rules; secrets stay in
   environment variables. Microsoft Presidio handles NLP detection; undeclared
   structured fields still get scanned so nothing slips through by default.
+  The product page under web/ includes a live playground (Vercel BFF); a home-lab
+  Raspberry Pi can host the demo API behind Cloudflare Tunnel when you are ready.
 stack:
   - Python
   - FastAPI
   - Presidio
+  - Next.js
   - PostgreSQL
   - Docker
   - APScheduler
@@ -21,3 +24,7 @@ c4: docs/c4/portfolio-map.json
 links:
   github: https://github.com/aryanjohari/pii-gateway
   docs: https://github.com/aryanjohari/pii-gateway/blob/main/docs/c4/README.md
+  web: https://github.com/aryanjohari/pii-gateway/tree/main/web
+  # After Vercel deploy, set to the live URL (e.g. https://pii-gateway.vercel.app)
+  demo: ""
+  pi_deploy: https://github.com/aryanjohari/pii-gateway/blob/main/docs/DEPLOY_PI.md

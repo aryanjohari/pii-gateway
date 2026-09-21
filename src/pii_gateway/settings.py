@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     gateway_state_dir: Path = Field(default=Path("/data/state"))
     disable_scheduler: bool = Field(default=False)
 
+    # Public / demo edge limits (0 disables that check)
+    sanitize_rate_limit_per_minute: int = Field(default=60)
+    sanitize_max_body_bytes: int = Field(default=65536)
+    sanitize_max_chars: int = Field(default=10000)
+
 
 def load_settings() -> Settings:
     return Settings()
