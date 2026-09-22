@@ -120,12 +120,17 @@ export function Playground() {
             Live demo
           </h2>
           <p className="mt-2 max-w-xl text-muted">
-            Paste sample text or JSON. The page proxies to your gateway—API keys stay
-            server-side.
+            Paste sample text or JSON. Declared JSON fields follow policy rules;
+            free-text NLP is best-effort. API keys stay server-side.
           </p>
         </div>
         <p className="text-sm text-muted">Sample data only — not for real PII.</p>
       </div>
+      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-muted">
+        Policy-first demo: not a compliance product. Names in free text may only
+        partially redact. For batch exports, prefer declared field rules over NLP
+        alone.
+      </p>
 
       <form
         onSubmit={onSubmit}

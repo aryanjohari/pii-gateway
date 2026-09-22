@@ -138,4 +138,4 @@ Then the same against the tunnel URL.
 
 - Web app setup: [`web/README.md`](../web/README.md)
 - Local Compose: root [`README.md`](../README.md)
-- Demo policy: [`config/examples/config.demo.yaml`](../config/examples/config.demo.yaml)
+- Demo policy: [`config/examples/config.demo.yaml`](../config/examples/config.demo.yaml) — after `git pull`, remount/restart so the container sees the updated file.

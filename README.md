@@ -2,11 +2,11 @@
 
 Visitor overview: see [`portfolio.yaml`](portfolio.yaml).
 
-Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that redacts free text and nested JSON with **Microsoft Presidio** plus a mounted **policy file**, then optionally writes artifacts to local disk or S3-compatible storage. Batch paths can pull PostgreSQL exports or CSV/JSON inbox files.
+Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that redacts free text and nested JSON from a mounted **policy file** (deterministic field rules) with **Microsoft Presidio** as best-effort NLP on undeclared strings, then optionally writes artifacts to local disk or S3-compatible storage. Batch paths can pull PostgreSQL exports or CSV/JSON inbox files.
 
-**Why:** Centralize scrubbing so analytics, logs, and experiments never need a copy of the same redaction logic in every repo. Not a compliance product or OLTP database proxy.
+**Why:** Centralize scrubbing so analytics, logs, and experiments never need a copy of the same redaction logic in every repo. **Not** a compliance product, accuracy guarantee, or OLTP database proxy—policy-first; NLP misses are expected.
 
-**Product surface:** landing + playground live under [`web/`](web/) (Vercel). Public demo proxies through a server-side BFF—sample data only. Home-lab API host checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
+**Product surface:** landing + playground live under [`web/`](web/) (Vercel). Public demo proxies through a server-side BFF—**sample data only**. Home-lab API host checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
 
 ---
 
@@ -122,7 +122,7 @@ config_version: 1
 redaction_entities: [EMAIL_ADDRESS, PERSON]
 structured_field_rules:
   email: redact
-  full_name: tokenize
+  full_name: redact
 postgres_batch:
   enabled: false
   query_name: export_users
@@ -139,7 +139,7 @@ persistence:
   write_cleaned: true
 ```
 
-**Note:** `passthrough` and undeclared string fields still run through Presidio free-text redaction. `tokenize` produces a field-name label (`<{FIELD}_TOKEN>`), not a reversible token.
+**Placeholders:** Declared `redact` / `tokenize` and Presidio free-text output use the same angle-bracket style (e.g. `<EMAIL_ADDRESS>`, `<PERSON>`). Common field names map to Presidio entity types; unknown fields use `<{FIELD_UPPER}>`. `tokenize` is **not** cryptographic. `passthrough` and undeclared strings still run through best-effort Presidio NLP—prefer declared field rules for batch/tabular data.
 
 ### Real-time API
 
@@ -181,6 +181,8 @@ Success shape:
 | 500 | `internal_error` | Sanitizer failure |
 
 For a public playground or home-lab demo, use [`config/examples/config.demo.yaml`](config/examples/config.demo.yaml) (`write_raw` / `write_cleaned` false), set the rate/size limits above, `DISABLE_SCHEDULER=true`, and put your site origin in `CORS_ALLOWED_ORIGINS` (or call via a server-side BFF). This is **not** a compliance product—do not send real PII to a public demo. Raspberry Pi checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
+
+**After pulling demo policy changes:** remount/restart the Pi (or local Compose) so it picks up the updated `config.demo.yaml`—e.g. `docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --force-recreate` (or restart the gateway service after confirming the volume mount still points at `config/examples/config.demo.yaml`).
 
 OpenAPI: `/docs` when the server is running.
 

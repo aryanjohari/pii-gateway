@@ -4,7 +4,7 @@ redaction_entities:
   - PERSON
 structured_field_rules:
   email: redact
-  full_name: tokenize
+  full_name: redact
 postgres_batch:
   enabled: false
   query_name: export_users

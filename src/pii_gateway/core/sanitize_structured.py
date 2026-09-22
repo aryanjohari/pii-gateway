@@ -11,12 +11,30 @@ from pii_gateway.policy_schema import GatewayPolicy
 
 FieldAction = Literal["redact", "tokenize", "mask", "passthrough"]
 
+# Map common declared field names to Presidio entity types so field-rule
+# placeholders match free-text anonymizer output (e.g. <EMAIL_ADDRESS>).
+_FIELD_TO_ENTITY: dict[str, str] = {
+    "email": "EMAIL_ADDRESS",
+    "email_address": "EMAIL_ADDRESS",
+    "full_name": "PERSON",
+    "name": "PERSON",
+    "person": "PERSON",
+    "phone": "PHONE_NUMBER",
+    "phone_number": "PHONE_NUMBER",
+}
+
+
+def _entity_placeholder(field: str) -> str:
+    entity = _FIELD_TO_ENTITY.get(field.lower(), field.upper())
+    return f"<{entity}>"
+
 
 def _apply_field_action(value: str, field: str, action: FieldAction) -> str:
     if action == "redact":
-        return "<REDACTED>"
+        return _entity_placeholder(field)
     if action == "tokenize":
-        return f"<{field.upper()}_TOKEN>"
+        # Same Presidio-style placeholder as redact; not cryptographic or reversible.
+        return _entity_placeholder(field)
     if action == "mask":
         if len(value) <= 2:
             return "**"

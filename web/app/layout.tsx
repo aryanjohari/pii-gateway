@@ -24,7 +24,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "PII Gateway — Self-hosted sanitization API",
   description:
-    "Docker-first FastAPI gateway that redacts personal data from text and JSON before it reaches logs, analytics, or experiments.",
+    "Docker-first FastAPI gateway: policy-first PII redaction with best-effort NLP. Personal / learning project—sample data only in the public demo.",
 };
 
 export default function RootLayout({

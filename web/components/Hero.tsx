@@ -8,8 +8,9 @@ export function Hero() {
         Scrub personal data from text and JSON before it leaves your boundary.
       </h1>
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-        A Docker-first FastAPI service powered by Microsoft Presidio and a mounted
-        policy file—centralize redaction for analytics, logs, and experiments.
+        A Docker-first FastAPI service: mounted policy rules first, Microsoft
+        Presidio NLP as best-effort fallback. Personal / learning project—not a
+        compliance product.
       </p>
       <div className="mt-9 flex flex-wrap items-center gap-3">
         <a

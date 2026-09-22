@@ -18,24 +18,28 @@ def engines() -> tuple[AnalyzerEngine, AnonymizerEngine]:
 
 
 @pytest.mark.parametrize(
-    ("action", "inp", "expected"),
+    ("action", "field", "inp", "expected"),
     [
-        ("redact", "secret", "<REDACTED>"),
-        ("tokenize", "secret", "<NOTE_TOKEN>"),
-        ("mask", "abcd", "a**d"),
-        ("mask", "ab", "**"),
+        ("redact", "note", "secret", "<NOTE>"),
+        ("tokenize", "note", "secret", "<NOTE>"),
+        ("redact", "email", "x@y.com", "<EMAIL_ADDRESS>"),
+        ("tokenize", "email", "x@y.com", "<EMAIL_ADDRESS>"),
+        ("redact", "full_name", "Bob Smith", "<PERSON>"),
+        ("mask", "note", "abcd", "a**d"),
+        ("mask", "note", "ab", "**"),
     ],
 )
 def test_field_actions(
     engines: tuple[AnalyzerEngine, AnonymizerEngine],
     action: FieldRule,
+    field: str,
     inp: str,
     expected: str,
 ) -> None:
     analyzer, anonymizer = engines
-    policy = GatewayPolicy(structured_field_rules={"note": action})
+    policy = GatewayPolicy(structured_field_rules={field: action})
     out = sanitize_structured_value(
-        "note",
+        field,
         inp,
         policy=policy,
         analyzer=analyzer,
@@ -62,6 +66,7 @@ def test_passthrough_presidio_value(
     )
     assert isinstance(out, str)
     assert "jane.doe@example.com" not in out
+    assert "<EMAIL_ADDRESS>" in out
 
 
 def test_nested_dict_and_list(engines: tuple[AnalyzerEngine, AnonymizerEngine]) -> None:
@@ -80,5 +85,29 @@ def test_nested_dict_and_list(engines: tuple[AnalyzerEngine, AnonymizerEngine]) 
         analyzer=analyzer,
         anonymizer=anonymizer,
     )
-    assert out["outer"]["email"] == "<REDACTED>"
-    assert out["items"][0]["email"] == "<REDACTED>"
+    assert out["outer"]["email"] == "<EMAIL_ADDRESS>"
+    assert out["items"][0]["email"] == "<EMAIL_ADDRESS>"
+
+
+def test_demo_json_fields_consistent(
+    engines: tuple[AnalyzerEngine, AnonymizerEngine],
+) -> None:
+    """Declared email + full_name both use Presidio-style placeholders."""
+    analyzer, anonymizer = engines
+    policy = GatewayPolicy(
+        structured_field_rules={"email": "redact", "full_name": "redact"},
+        redaction_entities=["EMAIL_ADDRESS", "PERSON"],
+    )
+    out = sanitize_structured_root(
+        {
+            "email": "bob@example.com",
+            "full_name": "Bob Smith",
+            "note": "Follow up with alice@example.com",
+        },
+        policy=policy,
+        analyzer=analyzer,
+        anonymizer=anonymizer,
+    )
+    assert out["email"] == "<EMAIL_ADDRESS>"
+    assert out["full_name"] == "<PERSON>"
+    assert "alice@example.com" not in str(out["note"])

@@ -1,15 +1,17 @@
 title: PII Gateway
-summary: Self-hosted API that redacts personal data from JSON, text, and batch files before downstream use.
+summary: Self-hosted API that redacts personal data from JSON and text via policy rules plus best-effort NLP.
 description: >
-  PII Gateway is a Docker-first service for teams that want one place to scrub
-  emails, names, and other personal data before it reaches analytics, logs, or
-  third-party tools. Call POST /v1/sanitize for live JSON and free text, or let
-  optional jobs pull PostgreSQL exports and CSV or JSON inbox files on a schedule.
-  A mounted policy file sets entity types and per-field rules; secrets stay in
-  environment variables. Microsoft Presidio handles NLP detection; undeclared
-  structured fields still get scanned so nothing slips through by default.
-  The product page under web/ includes a live playground (Vercel BFF); a home-lab
-  Raspberry Pi can host the demo API behind Cloudflare Tunnel when you are ready.
+  PII Gateway is a Docker-first personal/learning service for scrubbing emails,
+  names, and other personal data before it reaches analytics, logs, or
+  experiments. Declared JSON fields use deterministic policy rules; free text
+  and undeclared strings get best-effort Microsoft Presidio NLP—not an accuracy
+  guarantee or compliance product. Call POST /v1/sanitize for live JSON and
+  free text, or let optional jobs pull PostgreSQL exports and CSV or JSON inbox
+  files. Secrets stay in environment variables; a mounted policy file sets
+  entity types and per-field rules. Placeholders use one Presidio-style scheme
+  (e.g. <EMAIL_ADDRESS>). The product page under web/ includes a sample-data
+  playground (Vercel BFF); a home-lab Raspberry Pi can host the demo API behind
+  Cloudflare Tunnel when you are ready.
 stack:
   - Python
   - FastAPI

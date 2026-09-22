@@ -20,3 +20,4 @@ def test_sanitize_free_text_redacts_email() -> None:
         entity_types=["EMAIL_ADDRESS"],
     )
     assert "alice@example.com" not in out
+    assert "<EMAIL_ADDRESS>" in out

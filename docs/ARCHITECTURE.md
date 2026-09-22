@@ -72,7 +72,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 
 ## Notable implementation details
 
-- **`tokenize` is a label, not crypto** — Values become `<{FIELD}_TOKEN>` from the field name; not stable or reversible tokens.
+- **Placeholders match Presidio** — Declared `redact` / `tokenize` replace values with `<ENTITY_TYPE>` (common field names map to Presidio types; otherwise `<{FIELD_UPPER}>`). `tokenize` is a label, not crypto.
 - **Double Presidio analysis** — Counts for `entity_summary` and anonymization each call `analyze` (honest cost/inefficiency).
 - **Batch memory** — Readers can stream/chunk, but jobs currently buffer rows before writing artifacts.
 - **Local vs S3 dedupe** — Local fingerprints use `mtime_ns` + size; S3 path uses **size only** (content-same-size replacement can be skipped).

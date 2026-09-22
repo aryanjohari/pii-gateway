@@ -25,6 +25,6 @@ Zoom of the single FastAPI / Uvicorn process (`Dockerfile` CMD). All components 
 3. **Counts-only summary** — `entity_summary` is entity-type counts; no spans/values in meta (`entity_summary.py`).
 4. **Double analyze cost** — Pipeline may call Presidio `analyze` for counts and again inside anonymize paths (honest inefficiency noted in `ARCHITECTURE.md`).
 5. **Scheduler behavior** — When enabled, file-ingest interval job is always registered; Postgres cron job only if `POSTGRES_BATCH_CRON` and `postgres_batch.enabled` (`jobs/scheduler.py`).
-6. **`tokenize` is a label** — Values become `<{FIELD}_TOKEN>`; not cryptographic or reversible tokens.
+6. **Placeholders match Presidio** — `redact` / `tokenize` use `<ENTITY_TYPE>` (field→entity map or uppercased field name); `tokenize` is not cryptographic.
 
 Parent view: [../2-containers.md](../2-containers.md). Diagram: [pii-gateway.mmd](pii-gateway.mmd).

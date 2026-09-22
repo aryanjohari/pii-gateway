@@ -1,4 +1,6 @@
-# Public / home-lab demo policy: redact common entities, write no artifacts.
+# Public / home-lab demo policy: policy-first redaction for the playground.
+# NLP on undeclared free text is best-effort (spaCy/Presidio); sample data only.
+# After pulling updates, remount this file and restart the gateway container.
 config_version: 1
 redaction_entities:
   - EMAIL_ADDRESS
@@ -6,7 +8,7 @@ redaction_entities:
   - PHONE_NUMBER
 structured_field_rules:
   email: redact
-  full_name: tokenize
+  full_name: redact
   phone: redact
 postgres_batch:
   enabled: false

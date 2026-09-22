@@ -5,11 +5,11 @@ const STEPS = [
   },
   {
     title: "Apply policy + Presidio",
-    body: "A mounted YAML policy sets entity types and per-field rules; undeclared strings still get scanned.",
+    body: "Declared fields use deterministic rules; undeclared strings get best-effort NLP. Placeholders look like <EMAIL_ADDRESS>.",
   },
   {
     title: "Return cleaned data",
-    body: "Get redacted output and an entity summary—ready for logs, analytics, or experiments.",
+    body: "Get redacted output and entity counts for logs, analytics, or experiments—no accuracy guarantees.",
   },
 ];
 
