@@ -18,7 +18,7 @@ type SanitizeErr = {
 };
 
 const TEXT_SAMPLE =
-  "Please email alice@example.com or call Jane Doe about the invoice.";
+  "Please email alice@example.com about the invoice.";
 const JSON_SAMPLE = `{
   "email": "bob@example.com",
   "full_name": "Bob Smith",
