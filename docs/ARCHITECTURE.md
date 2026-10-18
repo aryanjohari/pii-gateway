@@ -26,11 +26,11 @@ PII Gateway is a **single-container** FastAPI service that centralizes personal-
 What was designed here (not stock framework defaults):
 
 1. **Two-tier config boundary** — Non-secret policy (entities, field rules, named SQL, inbox paths) lives in mounted YAML/JSON and fails validation at startup on bad field actions. Credentials and DSNs stay in environment variables only.
-2. **Fail-closed structured walk** — Recursive JSON sanitization applies explicit `redact` / `tokenize` / `mask` rules when declared; **undeclared string fields and `passthrough` still run through Presidio**. There is no silent “leave this string alone” escape hatch.
-3. **Named SQL as a security boundary** — Batch queries come only from the policy file, selected by `query_name`, executed via SQLAlchemy `text()` with bound params. HTTP callers cannot supply SQL text.
+2. **Fail-closed structured walk** — Recursive JSON sanitization applies explicit `redact` / `tokenize` / `mask` rules when declared; **undeclared string fields and `passthrough` still run through Presidio**. There is no silent “leave this string alone” escape hatch. ([ADR 0003](adr/0003-fail-closed-structured-walk.md))
+3. **Named SQL as a security boundary** — Batch queries come only from the policy file, selected by `query_name`, executed via SQLAlchemy `text()` with bound params. HTTP callers cannot supply SQL text. ([ADR 0002](adr/0002-named-sql-only-batch-policy.md))
 4. **Privacy invariants in tests and telemetry** — Core sanitize modules are asserted to contain no `logging` imports (`test_core_no_logging`). Response/meta `entity_summary` is **counts by entity type only** (no spans/values). Artifact keys are UTC date partitions + UUID—no input-derived path segments.
 5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once and injected into pure pipeline functions for predictable memory and testability.
-6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS.
+6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS. ([ADR 0001](adr/0001-docker-first-over-lambda.md))
 
 ## C4 diagrams (canonical)
 
