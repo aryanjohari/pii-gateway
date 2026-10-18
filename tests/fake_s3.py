@@ -10,6 +10,7 @@ class FakeS3:
         self.objects: dict[tuple[str, str], bytes] = {}
         self.page_size = page_size
         self.fail_with: Exception | None = None
+        self.fail_get_keys: dict[str, Exception] = {}
         self.client_kwargs: list[dict[str, Any]] = []
         self.put_calls: list[dict[str, Any]] = []
 
@@ -34,6 +35,8 @@ class FakeS3:
 
     async def get_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:  # noqa: N803
         self._check()
+        if Key in self.fail_get_keys:
+            raise self.fail_get_keys[Key]
         data = self.objects[(Bucket, Key)]
 
         class _Body:

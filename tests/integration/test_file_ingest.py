@@ -5,6 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from botocore.exceptions import ReadTimeoutError
 from fastapi import FastAPI
 
 from fake_s3 import FakeS3
@@ -107,3 +108,52 @@ async def test_csv_over_the_size_limit_is_skipped_without_output(
 
     assert _cleaned_artifacts(tmp_path) == []
     assert not (tmp_path / "state" / "processed_files.json").exists()
+
+
+def _failed_object_logs(caplog: pytest.LogCaptureFixture) -> list[dict[str, object]]:
+    return [
+        record.log_extra
+        for record in caplog.records
+        if getattr(record, "log_extra", {}).get("event") == "file_ingest_failed"
+    ]
+
+
+async def test_s3_object_with_unparseable_content_is_skipped_and_logged_by_key(
+    tmp_path: Path,
+    make_job_app: Callable[..., FastAPI],
+    fake_s3: FakeS3,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    secret = "secret.person@example.com"
+    fake_s3.objects[("inbox-bucket", "in/a_broken.json")] = f"{{{secret} not json".encode()
+    fake_s3.objects[("inbox-bucket", "in/b_good.csv")] = b"email,note\nalice@example.com,hi\n"
+    app = make_job_app(
+        batch_file_ingest=BatchFileIngestConfig(
+            mode="s3", s3_bucket="inbox-bucket", s3_prefix="in/"
+        )
+    )
+
+    with caplog.at_level("INFO"):
+        await run_file_ingest_job(app)
+
+    assert len(_cleaned_artifacts(tmp_path)) == 1
+    failures = _failed_object_logs(caplog)
+    assert [f["artifact_key"] for f in failures] == ["in/a_broken.json"]
+    assert secret not in str(caplog.records) + str(failures)
+
+
+async def test_s3_download_timeout_skips_that_object_and_continues(
+    tmp_path: Path, make_job_app: Callable[..., FastAPI], fake_s3: FakeS3
+) -> None:
+    fake_s3.objects[("inbox-bucket", "in/a_slow.csv")] = b"email\nx@example.com\n"
+    fake_s3.objects[("inbox-bucket", "in/b_good.csv")] = b"email,note\nalice@example.com,hi\n"
+    fake_s3.fail_get_keys["in/a_slow.csv"] = ReadTimeoutError(endpoint_url="http://minio:9000")
+    app = make_job_app(
+        batch_file_ingest=BatchFileIngestConfig(
+            mode="s3", s3_bucket="inbox-bucket", s3_prefix="in/"
+        )
+    )
+
+    await run_file_ingest_job(app)
+
+    assert len(_cleaned_artifacts(tmp_path)) == 1
