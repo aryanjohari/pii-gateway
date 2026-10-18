@@ -19,3 +19,9 @@ web/node_modules/
 web/.next/
 web/.env
 web/.env.local
+
+# Local-only files (kept on disk, not published)
+resume.md
+.cursorrules
+architecture.plan.md
+docs/archive/

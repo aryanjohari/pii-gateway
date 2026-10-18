@@ -22,8 +22,6 @@ Visitor narrative (premise, unique approach, tradeoffs): [../ARCHITECTURE.md](..
 | [2-containers.mmd](2-containers.mmd) | Default Mermaid diagram linked from `portfolio.yaml` (`diagram:`) |
 | [../architecture.mmd](../architecture.mmd) | Optional flowchart **alias** of C2 for renderers without Mermaid C4 |
 
-Archived (do not use): [../archive/architecture.graph.json](../archive/architecture.graph.json).
-
 Open Mermaid in [mermaid.live](https://mermaid.live) or [../view-architecture.html](../view-architecture.html).
 
 ## Stable IDs

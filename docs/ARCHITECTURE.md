@@ -30,11 +30,11 @@ What was designed here (not stock framework defaults):
 3. **Named SQL as a security boundary** — Batch queries come only from the policy file, selected by `query_name`, executed via SQLAlchemy `text()` with bound params. HTTP callers cannot supply SQL text.
 4. **Privacy invariants in tests and telemetry** — Core sanitize modules are asserted to contain no `logging` imports (`test_core_no_logging`). Response/meta `entity_summary` is **counts by entity type only** (no spans/values). Artifact keys are UTC date partitions + UUID—no input-derived path segments.
 5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once and injected into pure pipeline functions for predictable memory and testability.
-6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS (see `architecture.plan.md` changelog).
+6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS.
 
 ## C4 diagrams (canonical)
 
-Diagrams are **bottom-up from code** and live under [`docs/c4/`](c4/). Do not treat archived flowchart IR as source of truth.
+Diagrams are **bottom-up from code** and live under [`docs/c4/`](c4/).
 
 | Level | Link |
 |-------|------|
