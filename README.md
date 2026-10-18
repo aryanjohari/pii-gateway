@@ -1,6 +1,18 @@
 # PII Gateway
 
-Visitor overview: see [`portfolio.yaml`](portfolio.yaml).
+Self-hosted API that redacts personal data from text and JSON using policy rules plus best-effort NLP. **[Live demo](https://pii-gateway.arkhives.nz/)** (sample data only).
+
+```jsonc
+// POST /v1/sanitize  (config/examples/config.example.yaml)
+{ "text": "Contact Alice Johnson at alice@example.com for details.",
+  "structured": { "email": "bob@example.com", "full_name": "Bob Smith", "plan": "pro" } }
+
+// result
+{ "text": "Contact <PERSON> at <EMAIL_ADDRESS> for details.",
+  "structured": { "email": "<EMAIL_ADDRESS>", "full_name": "<PERSON>", "plan": "pro" } }
+```
+
+`email` and `full_name` are redacted by declared policy rules; names and emails in free text are caught by Presidio.
 
 Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that redacts free text and nested JSON from a mounted **policy file** (deterministic field rules) with **Microsoft Presidio** as best-effort NLP on undeclared strings, then optionally writes artifacts to local disk or S3-compatible storage. Batch paths can pull PostgreSQL exports or CSV/JSON inbox files.
 
