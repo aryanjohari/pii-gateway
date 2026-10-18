@@ -93,3 +93,17 @@ async def test_s3_inbox_object_is_redacted_once(
     artifacts = _cleaned_artifacts(tmp_path)
     assert len(artifacts) == 1
     assert "alice@example.com" not in artifacts[0].read_text(encoding="utf-8")
+
+
+async def test_csv_over_the_size_limit_is_skipped_without_output(
+    tmp_path: Path, make_job_app: Callable[..., FastAPI]
+) -> None:
+    app = make_job_app()
+    app.state.settings = app.state.settings.model_copy(update={"batch_csv_max_bytes": 50})
+    rows = "".join(f"user{i}@example.com,hello\n" for i in range(10))
+    (tmp_path / "inbox" / "big.csv").write_text("email,note\n" + rows, encoding="utf-8")
+
+    await run_file_ingest_job(app)
+
+    assert _cleaned_artifacts(tmp_path) == []
+    assert not (tmp_path / "state" / "processed_files.json").exists()
