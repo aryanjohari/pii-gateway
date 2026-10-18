@@ -238,6 +238,14 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
+## Limitations
+
+- **Best-effort redaction.** Presidio NLP produces false negatives (missed personal data) and false positives. No accuracy numbers are published yet, so do not rely on it as the only control.
+- **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
+- **English only.** The NLP path loads English models.
+- **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
+- **Batch connectors are less tested** than the HTTP path (S3 inbox, scheduler, Postgres job).
+
 ## Architecture
 
 Design case study and tradeoffs: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**  
