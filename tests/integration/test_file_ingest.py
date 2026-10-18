@@ -7,7 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi import FastAPI
 
+from fake_s3 import FakeS3
 from pii_gateway.jobs.file_ingest import run_file_ingest_job
+from pii_gateway.policy_schema import BatchFileIngestConfig
 
 
 def _cleaned_artifacts(app_root: Path) -> list[Path]:
@@ -72,3 +74,22 @@ async def test_unchanged_file_is_not_processed_twice(
     await run_file_ingest_job(app)
 
     assert len(_cleaned_artifacts(tmp_path)) == 1
+
+
+async def test_s3_inbox_object_is_redacted_once(
+    tmp_path: Path, make_job_app: Callable[..., FastAPI], fake_s3: FakeS3
+) -> None:
+    fake_s3.objects[("inbox-bucket", "in/users.csv")] = b"email,note\nalice@example.com,hi\n"
+    fake_s3.objects[("inbox-bucket", "in/readme.txt")] = b"ignored"
+    app = make_job_app(
+        batch_file_ingest=BatchFileIngestConfig(
+            mode="s3", s3_bucket="inbox-bucket", s3_prefix="in/"
+        )
+    )
+
+    await run_file_ingest_job(app)
+    await run_file_ingest_job(app)
+
+    artifacts = _cleaned_artifacts(tmp_path)
+    assert len(artifacts) == 1
+    assert "alice@example.com" not in artifacts[0].read_text(encoding="utf-8")

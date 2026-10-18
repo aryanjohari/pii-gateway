@@ -31,6 +31,7 @@ def make_job_app(
         *,
         postgres_batch: PostgresBatchConfig | None = None,
         postgres_engine: object | None = None,
+        batch_file_ingest: BatchFileIngestConfig | None = None,
     ) -> FastAPI:
         inbox = tmp_path / "inbox"
         inbox.mkdir(exist_ok=True)
@@ -42,7 +43,8 @@ def make_job_app(
         policy = GatewayPolicy(
             redaction_entities=["EMAIL_ADDRESS"],
             structured_field_rules={"email": "redact"},
-            batch_file_ingest=BatchFileIngestConfig(mode="local", local_path=inbox),
+            batch_file_ingest=batch_file_ingest
+            or BatchFileIngestConfig(mode="local", local_path=inbox),
             postgres_batch=postgres_batch or PostgresBatchConfig(),
         )
         state = SimpleNamespace(
