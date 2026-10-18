@@ -6,6 +6,7 @@ import pytest
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 
+from pii_gateway.core.sanitize_pipeline import sanitize_payload
 from pii_gateway.core.sanitize_structured import sanitize_structured_root, sanitize_structured_value
 from pii_gateway.policy_schema import GatewayPolicy
 
@@ -111,3 +112,22 @@ def test_demo_json_fields_consistent(
     assert out["email"] == "<EMAIL_ADDRESS>"
     assert out["full_name"] == "<PERSON>"
     assert "alice@example.com" not in str(out["note"])
+
+
+def test_entity_summary_counts_pii_inside_nested_lists(
+    engines: tuple[AnalyzerEngine, AnonymizerEngine],
+) -> None:
+    analyzer, anonymizer = engines
+    policy = GatewayPolicy(redaction_entities=["EMAIL_ADDRESS"])
+    structured = {"contacts": [{"mail": "a@example.com"}, ["b@example.com", "c@example.com"]]}
+
+    result, summary = sanitize_payload(
+        text=None,
+        structured=structured,
+        policy=policy,
+        analyzer=analyzer,
+        anonymizer=anonymizer,
+    )
+
+    assert summary == {"EMAIL_ADDRESS": 3}
+    assert "example.com" not in str(result)

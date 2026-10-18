@@ -7,13 +7,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pii_gateway.api.middleware import CorrelationIdMiddleware
 from pii_gateway.api.rate_limit import create_sliding_window_limiter
 from pii_gateway.api.routes_internal import router as internal_router
 from pii_gateway.api.routes_sanitize import router as sanitize_router
 from pii_gateway.config_loader import load_gateway_policy
+from pii_gateway.connectors.batch_postgres_sqlalchemy import create_batch_engine
 from pii_gateway.jobs.scheduler import setup_scheduler, shutdown_scheduler
 from pii_gateway.logging_config import setup_logging
 from pii_gateway.settings import Settings, load_settings
@@ -44,7 +45,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     engine: AsyncEngine | None = None
     if settings.postgres_batch_dsn and not settings.batch_demo_fixture:
-        engine = create_async_engine(settings.postgres_batch_dsn)
+        engine = create_batch_engine(
+            settings.postgres_batch_dsn,
+            command_timeout_seconds=settings.postgres_command_timeout_seconds,
+        )
     app.state.postgres_engine = engine
 
     scheduler = None

@@ -64,6 +64,7 @@ module = [
     "apscheduler.*",
     "aioboto3",
     "aioboto3.*",
+    "botocore.*",
 ]
 ignore_missing_imports = true
 
@@ -79,7 +80,7 @@ disable_error_code = ["import-untyped"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "-q --cov=pii_gateway --cov-report=term-missing --cov-fail-under=0"
+addopts = "-q --cov=pii_gateway --cov-report=term-missing --cov-fail-under=85"
 
 [tool.coverage.run]
 branch = true

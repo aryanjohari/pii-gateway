@@ -1,6 +1,18 @@
 # PII Gateway
 
-Visitor overview: see [`portfolio.yaml`](portfolio.yaml).
+Self-hosted API that redacts personal data from text and JSON using policy rules plus best-effort NLP. **[Live demo](https://pii-gateway.arkhives.nz/)** (sample data only).
+
+```jsonc
+// POST /v1/sanitize  (config/examples/config.example.yaml)
+{ "text": "Contact Alice Johnson at alice@example.com for details.",
+  "structured": { "email": "bob@example.com", "full_name": "Bob Smith", "plan": "pro" } }
+
+// result
+{ "text": "Contact <PERSON> at <EMAIL_ADDRESS> for details.",
+  "structured": { "email": "<EMAIL_ADDRESS>", "full_name": "<PERSON>", "plan": "pro" } }
+```
+
+`email` and `full_name` are redacted by declared policy rules; names and emails in free text are caught by Presidio.
 
 Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that redacts free text and nested JSON from a mounted **policy file** (deterministic field rules) with **Microsoft Presidio** as best-effort NLP on undeclared strings, then optionally writes artifacts to local disk or S3-compatible storage. Batch paths can pull PostgreSQL exports or CSV/JSON inbox files.
 
@@ -102,8 +114,10 @@ uvicorn pii_gateway.main:app --reload
 | `STORAGE_LOCAL_PATH` | Local artifact root (e.g. `/data/out`). |
 | `S3_ENDPOINT_URL` / `S3_BUCKET` / `S3_PREFIX` | S3-compatible outbound (omit endpoint for AWS default). |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` | Shared by inbox download and outbound upload. |
+| `S3_CONNECT_TIMEOUT_SECONDS` / `S3_READ_TIMEOUT_SECONDS` | S3 timeouts (defaults `5` / `60`). A timeout raises `TimeoutError` naming the operation, bucket and key. |
 | `INBOX_S3_BUCKET` / `INBOX_S3_PREFIX` | Defaults when policy leaves S3 inbox empty. |
 | `POSTGRES_BATCH_DSN` | Async SQLAlchemy URL (`postgresql+asyncpg://…`). Prefer read-only. |
+| `POSTGRES_COMMAND_TIMEOUT_SECONDS` | Per-query timeout for the batch export (default `60`). A timeout raises `TimeoutError` naming the query. |
 | `POSTGRES_BATCH_CRON` | Cron for scheduled Postgres batch; empty disables. |
 | `BATCH_FILE_POLL_SECONDS` | File inbox poll interval (min 5s). |
 | `INTERNAL_JOB_API_KEY` | Enables `/internal/jobs/*` (`X-Internal-Job-Key`). |
@@ -225,6 +239,14 @@ mypy src
 Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
+
+## Limitations
+
+- **Best-effort redaction.** Presidio NLP produces false negatives (missed personal data) and false positives. No accuracy numbers are published yet, so do not rely on it as the only control.
+- **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
+- **English only.** The NLP path loads English models.
+- **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
+- **Batch connectors are less tested** than the HTTP path (S3 inbox, scheduler, Postgres job).
 
 ## Architecture
 

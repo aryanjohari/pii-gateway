@@ -29,11 +29,15 @@ class Settings(BaseSettings):
     aws_secret_access_key: str | None = Field(default=None)
     aws_region: str = Field(default="us-east-1")
 
+    s3_connect_timeout_seconds: float = Field(default=5.0, gt=0)
+    s3_read_timeout_seconds: float = Field(default=60.0, gt=0)
+
     inbox_s3_bucket: str | None = Field(default=None)
     inbox_s3_prefix: str = Field(default="")
 
     postgres_batch_dsn: str | None = Field(default=None)
     postgres_batch_cron: str | None = Field(default=None)
+    postgres_command_timeout_seconds: float = Field(default=60.0, gt=0)
     batch_file_poll_seconds: int | None = Field(default=None)
 
     internal_job_api_key: str | None = Field(default=None)

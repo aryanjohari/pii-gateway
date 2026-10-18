@@ -33,6 +33,19 @@ def _normalize_csv_row(row: dict[str, object]) -> dict[str, Any]:
     return out
 
 
+def _log_s3_object_failed(config_version: int, key: str, exc: Exception) -> None:
+    # Key and exception type only: object contents may be PII.
+    log_event(
+        logger,
+        logging.ERROR,
+        "file_ingest_failed",
+        adapter="batch_file",
+        config_version=config_version,
+        error_code=type(exc).__name__,
+        artifact_key=key,
+    )
+
+
 async def run_file_ingest_job(app: FastAPI) -> None:
     settings = app.state.settings
     policy = app.state.policy
@@ -63,6 +76,8 @@ async def run_file_ingest_job(app: FastAPI) -> None:
         region=settings.aws_region,
         access_key=settings.aws_access_key_id,
         secret_key=settings.aws_secret_access_key,
+        connect_timeout=settings.s3_connect_timeout_seconds,
+        read_timeout=settings.s3_read_timeout_seconds,
     )
     idx = load_processed_index(settings.gateway_state_dir)
     for key in keys:
@@ -70,14 +85,20 @@ async def run_file_ingest_job(app: FastAPI) -> None:
         if not (lower.endswith(".csv") or lower.endswith(".json")):
             continue
         index_key = f"s3:{bucket}:{key}"
-        data = await s3_inbox.get_object_bytes(
-            bucket=bucket,
-            key=key,
-            endpoint_url=settings.s3_endpoint_url,
-            region=settings.aws_region,
-            access_key=settings.aws_access_key_id,
-            secret_key=settings.aws_secret_access_key,
-        )
+        try:
+            data = await s3_inbox.get_object_bytes(
+                bucket=bucket,
+                key=key,
+                endpoint_url=settings.s3_endpoint_url,
+                region=settings.aws_region,
+                access_key=settings.aws_access_key_id,
+                secret_key=settings.aws_secret_access_key,
+                connect_timeout=settings.s3_connect_timeout_seconds,
+                read_timeout=settings.s3_read_timeout_seconds,
+            )
+        except (OSError, ValueError) as exc:  # TimeoutError is an OSError
+            _log_s3_object_failed(policy.config_version, key, exc)
+            continue
         if len(data) > settings.batch_csv_max_bytes:
             log_event(
                 logger,
@@ -131,6 +152,9 @@ async def run_file_ingest_job(app: FastAPI) -> None:
                     anonymizer=app.state.anonymizer,
                     source="batch_json",
                 )
+        except (OSError, ValueError) as exc:
+            _log_s3_object_failed(policy.config_version, key, exc)
+            continue
         finally:
             tmp_path.unlink(missing_ok=True)
 
