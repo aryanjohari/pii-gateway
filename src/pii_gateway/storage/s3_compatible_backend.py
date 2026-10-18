@@ -1,7 +1,10 @@
 """S3-compatible outbound storage (MinIO, R2, AWS S3)."""
 
+from typing import Any
+
 import aioboto3
 
+from pii_gateway.s3_common import s3_client_config, s3_timeout_context
 from pii_gateway.storage.outbound_interface import StorageLayer
 
 
@@ -15,6 +18,8 @@ class S3CompatibleBackend:
         region: str,
         access_key: str | None,
         secret_key: str | None,
+        connect_timeout: float,
+        read_timeout: float,
     ) -> None:
         self._bucket = bucket
         self._prefix = prefix.strip("/")
@@ -22,6 +27,9 @@ class S3CompatibleBackend:
         self._region = region
         self._access_key = access_key
         self._secret_key = secret_key
+        self._client_config = s3_client_config(
+            connect_timeout=connect_timeout, read_timeout=read_timeout
+        )
         self._session = aioboto3.Session()
 
     def _object_key(self, layer: StorageLayer, relative_key: str) -> str:
@@ -46,13 +54,17 @@ class S3CompatibleBackend:
                 "Body": data,
                 "ContentType": content_type,
             }
-            client_kw: dict[str, str | None] = {"region_name": self._region}
+            client_kw: dict[str, Any] = {
+                "region_name": self._region,
+                "config": self._client_config,
+            }
             if self._endpoint_url:
                 client_kw["endpoint_url"] = self._endpoint_url
             if self._access_key and self._secret_key:
                 client_kw["aws_access_key_id"] = self._access_key
                 client_kw["aws_secret_access_key"] = self._secret_key
             async with self._session.client("s3", **client_kw) as client:
-                await client.put_object(**kwargs)
+                with s3_timeout_context("put_object", bucket=self._bucket, key=key):
+                    await client.put_object(**kwargs)
 
         await _put()

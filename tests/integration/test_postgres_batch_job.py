@@ -89,3 +89,28 @@ async def test_no_matching_rows_still_advances_cursor(
 
     assert all(rows == [] for rows in _cleaned_lines(tmp_path))
     assert load_postgres_since(tmp_path / "state") >= before
+
+
+class _HangingEngine:
+    """Stands in for an AsyncEngine whose query exceeds asyncpg's command_timeout."""
+
+    def connect(self) -> "_HangingEngine":
+        return self
+
+    async def __aenter__(self) -> "_HangingEngine":
+        return self
+
+    async def __aexit__(self, *exc_info: object) -> None:
+        return None
+
+    async def stream(self, *args: object) -> None:
+        raise TimeoutError
+
+
+async def test_query_timeout_is_raised_with_the_query_name(
+    make_job_app: Callable[..., FastAPI],
+) -> None:
+    app = make_job_app(postgres_batch=BATCH_CONFIG, postgres_engine=_HangingEngine())
+
+    with pytest.raises(TimeoutError, match="query_name=export_users"):
+        await run_postgres_batch_job(app)

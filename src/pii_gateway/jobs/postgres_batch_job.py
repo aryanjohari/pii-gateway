@@ -81,8 +81,14 @@ async def run_postgres_batch_job(app: FastAPI) -> None:
     since = load_postgres_since(settings.gateway_state_dir)
     params = build_postgres_params(params_from=qdef.params_from, since=since)
     rows: list[dict[str, Any]] = []
-    async for row in iter_postgres_rows(engine, sql=qdef.sql, params=params):
-        rows.append(row)
+    try:
+        async for row in iter_postgres_rows(engine, sql=qdef.sql, params=params):
+            rows.append(row)
+    except TimeoutError as exc:
+        raise TimeoutError(
+            f"Postgres batch query timed out after "
+            f"{settings.postgres_command_timeout_seconds}s: query_name={qname}"
+        ) from exc
 
     out_id = await write_sanitized_rows_ndjson(
         app.state.storage,

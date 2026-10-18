@@ -63,6 +63,8 @@ async def run_file_ingest_job(app: FastAPI) -> None:
         region=settings.aws_region,
         access_key=settings.aws_access_key_id,
         secret_key=settings.aws_secret_access_key,
+        connect_timeout=settings.s3_connect_timeout_seconds,
+        read_timeout=settings.s3_read_timeout_seconds,
     )
     idx = load_processed_index(settings.gateway_state_dir)
     for key in keys:
@@ -77,6 +79,8 @@ async def run_file_ingest_job(app: FastAPI) -> None:
             region=settings.aws_region,
             access_key=settings.aws_access_key_id,
             secret_key=settings.aws_secret_access_key,
+            connect_timeout=settings.s3_connect_timeout_seconds,
+            read_timeout=settings.s3_read_timeout_seconds,
         )
         if len(data) > settings.batch_csv_max_bytes:
             log_event(

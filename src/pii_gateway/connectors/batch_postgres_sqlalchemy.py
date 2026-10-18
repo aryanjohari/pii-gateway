@@ -5,7 +5,12 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+
+def create_batch_engine(dsn: str, *, command_timeout_seconds: float) -> AsyncEngine:
+    # asyncpg's command_timeout bounds each query, so a hung DB cannot stall the job forever.
+    return create_async_engine(dsn, connect_args={"command_timeout": command_timeout_seconds})
 
 
 async def iter_postgres_rows(

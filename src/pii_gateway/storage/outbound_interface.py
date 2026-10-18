@@ -34,6 +34,8 @@ def create_outbound_storage(settings: Settings) -> OutboundStorage:
         region=settings.aws_region,
         access_key=settings.aws_access_key_id,
         secret_key=settings.aws_secret_access_key,
+        connect_timeout=settings.s3_connect_timeout_seconds,
+        read_timeout=settings.s3_read_timeout_seconds,
     )
 
 

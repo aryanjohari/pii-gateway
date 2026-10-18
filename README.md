@@ -114,8 +114,10 @@ uvicorn pii_gateway.main:app --reload
 | `STORAGE_LOCAL_PATH` | Local artifact root (e.g. `/data/out`). |
 | `S3_ENDPOINT_URL` / `S3_BUCKET` / `S3_PREFIX` | S3-compatible outbound (omit endpoint for AWS default). |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` | Shared by inbox download and outbound upload. |
+| `S3_CONNECT_TIMEOUT_SECONDS` / `S3_READ_TIMEOUT_SECONDS` | S3 timeouts (defaults `5` / `60`). A timeout raises `TimeoutError` naming the operation, bucket and key. |
 | `INBOX_S3_BUCKET` / `INBOX_S3_PREFIX` | Defaults when policy leaves S3 inbox empty. |
 | `POSTGRES_BATCH_DSN` | Async SQLAlchemy URL (`postgresql+asyncpg://…`). Prefer read-only. |
+| `POSTGRES_COMMAND_TIMEOUT_SECONDS` | Per-query timeout for the batch export (default `60`). A timeout raises `TimeoutError` naming the query. |
 | `POSTGRES_BATCH_CRON` | Cron for scheduled Postgres batch; empty disables. |
 | `BATCH_FILE_POLL_SECONDS` | File inbox poll interval (min 5s). |
 | `INTERNAL_JOB_API_KEY` | Enables `/internal/jobs/*` (`X-Internal-Job-Key`). |

@@ -64,6 +64,7 @@ module = [
     "apscheduler.*",
     "aioboto3",
     "aioboto3.*",
+    "botocore.*",
 ]
 ignore_missing_imports = true
 
