@@ -67,6 +67,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 | `connectors/` + `jobs/` | Postgres stream helper, CSV/JSON parsers, S3 inbox list/download, schedulers |
 | `storage/` | `OutboundStorage` protocol: local volume or S3-compatible `put_object` |
 | Policy + settings | `policy_schema.py` + `config_loader.py`; `settings.py` (pydantic-settings) |
+| `web/` (not in the image) | Next.js landing page and playground, deployed separately (Vercel). The browser calls its own `/api/sanitize` route, which adds the gateway key server-side and forwards to `POST /v1/sanitize`; the key never reaches the browser. The playground shows the redacted text next to the original. It does not call the LLM proxy. The public demo mounts `config/examples/config.demo-nz.yaml`. Design notes: `web/DESIGN.md` |
 
 ## Data / control flow
 
