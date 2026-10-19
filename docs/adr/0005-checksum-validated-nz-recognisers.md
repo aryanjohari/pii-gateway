@@ -25,7 +25,7 @@ How Presidio treats a pattern recogniser's result (read in `pattern_recognizer.p
 
 ## Consequences
 - NHI and IRD precision should be good because most look-alikes fail the checksum. By chance a random digit string will still pass some of the time; the look-alike negatives in the eval measure how often.
-- Licence precision will be lower than NHI and IRD, and the README says so.
+- Licence precision will be lower than NHI and IRD, and the README says so. With no checksum, any 2-letter + 6-digit code matches whatever the surrounding words say; context words only raise the score (0.2 to 0.55), and a licence with weak context scores the same as a part number, so a score threshold could not separate them.
 - NHI matching is uppercase-only to start (the standard defines upper case). Lowercase NHI numbers are a known gap.
 - The test data cannot cover realistic NHI first letters: only the `Z` prefix is reserved for tests.
 - The IRD "unissued numbers above 150,000,000" assumption for safe synthetic data is an interpretation, not confirmed.
