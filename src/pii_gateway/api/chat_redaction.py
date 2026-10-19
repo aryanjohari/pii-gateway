@@ -19,7 +19,7 @@ def redact_chat_messages(
     entity_types: list[str],
 ) -> tuple[list[Message], dict[str, int]]:
     """Return redacted copies of the messages and entity-type counts."""
-    texts = [text for message in messages for text in _message_texts(message)]
+    texts = [text for message in messages for text in message_texts(message)]
     cleaned, counts = redact_texts(
         texts, analyzer=analyzer, anonymizer=anonymizer, entity_types=entity_types
     )
@@ -27,7 +27,7 @@ def redact_chat_messages(
     return [_with_texts(message, cleaned_iter) for message in messages], counts
 
 
-def _message_texts(message: Message) -> list[str]:
+def message_texts(message: Message) -> list[str]:
     if isinstance(message.content, str):
         return [message.content]
     return [part.text for part in message.content]

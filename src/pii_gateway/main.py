@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pii_gateway.api.middleware import CorrelationIdMiddleware
 from pii_gateway.api.rate_limit import create_sliding_window_limiter
+from pii_gateway.api.routes_chat import router as chat_router
 from pii_gateway.api.routes_internal import router as internal_router
 from pii_gateway.api.routes_sanitize import router as sanitize_router
 from pii_gateway.config_loader import load_gateway_policy
@@ -52,6 +54,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
     app.state.postgres_engine = engine
 
+    llm_client: httpx.AsyncClient | None = None
+    if settings.llm_upstream_base_url:
+        llm_client = httpx.AsyncClient(
+            base_url=settings.llm_upstream_base_url,
+            timeout=settings.llm_upstream_timeout_seconds,
+        )
+    app.state.llm_client = llm_client
+
     scheduler = None
     if not settings.disable_scheduler:
         scheduler = setup_scheduler(app)
@@ -63,10 +73,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         shutdown_scheduler(scheduler)
     if engine is not None:
         await engine.dispose()
+    if app.state.llm_client is not None:
+        await app.state.llm_client.aclose()
 
 
 def _register_routes(application: FastAPI) -> None:
     application.include_router(sanitize_router)
+    application.include_router(chat_router)
     application.include_router(internal_router)
 
     @application.get("/healthz")
