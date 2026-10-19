@@ -31,6 +31,7 @@ How Presidio treats a pattern recogniser's result (read in `pattern_recognizer.p
 - The IRD "unissued numbers above 150,000,000" assumption for safe synthetic data is an interpretation, not confirmed.
 - NZ phone data uses only four numbers, taken from illustrative examples in a Commerce Commission draft document, written in several formats. No primary source gave a reserved fictional range (the NAD allocation rules v7.1 use "reserved" only for code-block allocation). Those four may be real subscriber numbers, and the phone results measure format variety, not number variety.
 - Driver licence numbers in the dataset are random letter-digit strings and could coincide with real cards; ones in the dataset were not checked against anything.
+- `NZ_IRD` and the built-in `PHONE_NUMBER` can match the same IRD number. The analyzer returns both; the anonymizer keeps the higher score, so the text is redacted either way and only the label differs. With an IRD context word nearby `NZ_IRD` wins (0.85 against 0.75, or 0.65 against 0.4); without one a grouped number like `168-507-968` can be labelled `PHONE_NUMBER`. The eval scores each type separately and does not merge overlaps, so it still counts those as phone false alarms.
 - Phone choice (extend Presidio's `PhoneRecognizer` regions versus a custom pattern) is deferred to a measurement in step 3.8 and recorded here afterwards.
 
 ## Alternatives considered
