@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from eval.scoring import Span, TypeScore, score_spans
 from pii_gateway.config_loader import load_gateway_policy
+from pii_gateway.core.analyzer_factory import build_analyzer
 from pii_gateway.settings import Settings
 
 EVAL_DIR = Path(__file__).resolve().parent
@@ -100,7 +101,7 @@ def format_report(
 def run(policy_path: Path, dataset_path: Path, command: str) -> str:
     policy = load_gateway_policy(Settings(pii_gateway_config_path=policy_path))
     entities = policy.redaction_entities or None
-    analyzer = AnalyzerEngine()  # built once, like the FastAPI lifespan
+    analyzer = build_analyzer()  # built once, like the FastAPI lifespan
     dataset = load_dataset(dataset_path)
     analyzer.analyze(
         text="warm-up", language="en", entities=entities
