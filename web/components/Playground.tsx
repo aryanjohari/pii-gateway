@@ -144,8 +144,8 @@ export function Playground() {
             JSON
           </ModeButton>
           <div className="ml-auto flex gap-2">
-            <SampleChip onClick={() => loadSample("email")}>email</SampleChip>
-            <SampleChip onClick={() => loadSample("name")}>name + json</SampleChip>
+            <SampleChip onClick={() => loadSample("email")}>Email sample</SampleChip>
+            <SampleChip onClick={() => loadSample("name")}>Name + JSON sample</SampleChip>
           </div>
         </div>
 
@@ -161,7 +161,7 @@ export function Playground() {
               }
               rows={12}
               spellCheck={mode === "text"}
-              className="w-full resize-y rounded-xl border border-transparent bg-mist/50 p-3 font-mono text-sm leading-relaxed text-ink outline-none focus:border-accent/40"
+              className="w-full resize-y rounded-xl border border-muted bg-mist/50 p-3 font-mono text-sm leading-relaxed text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             />
           </label>
 
@@ -170,6 +170,7 @@ export function Playground() {
               Output
             </span>
             <div
+              role="status"
               className={`min-h-[16rem] rounded-xl border border-transparent bg-mist/40 p-3 font-mono text-sm leading-relaxed ${
                 state === "success" ? "animate-fade" : ""
               }`}
@@ -242,6 +243,7 @@ function ModeButton({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={`rounded-full px-3 py-1.5 text-sm transition ${
         active ? "bg-ink text-paper" : "text-muted hover:text-ink"
