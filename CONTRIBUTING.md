@@ -10,6 +10,16 @@ Thank you for your interest in PII Gateway.
 - Lint: `ruff check src tests`
 - Typecheck: `mypy src`
 
+### Pre-commit (optional, recommended)
+
+Runs `ruff check` and `ruff format` on `src` and `tests` before each commit, so style failures
+are caught locally instead of in CI. CI itself does not depend on it.
+
+- Install the tool once: `pip install pre-commit`
+- Enable it in your clone: `pre-commit install`
+- Run it on everything: `pre-commit run --all-files`
+- Update the pinned ruff version: edit `rev` in `.pre-commit-config.yaml`, matching the ruff version you lint with.
+
 ## Pull requests
 
 - Keep changes focused; match existing style (`snake_case`, strict typing, Pydantic v2).

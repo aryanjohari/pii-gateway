@@ -62,9 +62,7 @@ def test_rate_limit_ignores_proxy_header_by_default(
         assert _post_as(client, "9.9.9.2") == 429
 
 
-def test_sanitize_rejects_oversize_chars(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_sanitize_rejects_oversize_chars(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _base_env(tmp_path, monkeypatch)
     monkeypatch.setenv("SANITIZE_RATE_LIMIT_PER_MINUTE", "0")
     monkeypatch.setenv("SANITIZE_MAX_CHARS", "20")
