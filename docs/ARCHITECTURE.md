@@ -29,8 +29,9 @@ What was designed here (not stock framework defaults):
 2. **Fail-closed structured walk** — Recursive JSON sanitization applies explicit `redact` / `tokenize` / `mask` rules when declared; **undeclared string fields and `passthrough` still run through Presidio**. There is no silent “leave this string alone” escape hatch. ([ADR 0003](adr/0003-fail-closed-structured-walk.md))
 3. **Named SQL as a security boundary** — Batch queries come only from the policy file, selected by `query_name`, executed via SQLAlchemy `text()` with bound params. HTTP callers cannot supply SQL text. ([ADR 0002](adr/0002-named-sql-only-batch-policy.md))
 4. **Privacy invariants in tests and telemetry** — Core sanitize modules are asserted to contain no `logging` imports (`test_core_no_logging`). Response/meta `entity_summary` is **counts by entity type only** (no spans/values). Artifact keys are UTC date partitions + UUID—no input-derived path segments.
-5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once and injected into pure pipeline functions for predictable memory and testability.
+5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once (the analyzer through `core/analyzer_factory.build_analyzer()`, which the eval harness also calls) and injected into pure pipeline functions for predictable memory and testability.
 6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS. ([ADR 0001](adr/0001-docker-first-over-lambda.md))
+7. **Checksum-validated NZ recognisers** — NHI and IRD numbers are matched by shape and kept only if the issuer's published check digit passes; driver licences have no published checksum and match by shape alone. Registered in the analyzer factory and scored by `eval/`. ([ADR 0005](adr/0005-checksum-validated-nz-recognisers.md))
 
 ## C4 diagrams (canonical)
 
@@ -58,6 +59,8 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 | `POST /v1/sanitize` | Real-time sanitize; `X-API-Key` vs `SANITIZE_HTTP_API_KEY` (missing/blank key → 503) |
 | `/internal/jobs/*` | One-shot Postgres batch or file ingest; `X-Internal-Job-Key` |
 | `core/sanitize_*` | Free-text Presidio anonymize; recursive structured rules + NLP fallback |
+| `core/analyzer_factory.py` + `core/recognizers/` | Builds the one `AnalyzerEngine` and registers the NZ recognisers (`NZ_NHI`, `NZ_IRD`, `NZ_DRIVER_LICENCE`); checksums are pure functions, the Presidio classes are thin wrappers |
+| `eval/` (not in the image) | `python -m eval.run_eval` scores the analyzer on synthetic datasets per entity type |
 | `connectors/` + `jobs/` | Postgres stream helper, CSV/JSON parsers, S3 inbox list/download, schedulers |
 | `storage/` | `OutboundStorage` protocol: local volume or S3-compatible `put_object` |
 | Policy + settings | `policy_schema.py` + `config_loader.py`; `settings.py` (pydantic-settings) |
@@ -83,6 +86,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 ## Tradeoffs and limitations
 
 - NLP + regex false positives/negatives; policy tuning and human review still matter
+- NZ identifiers: a mistyped NHI or IRD number fails its check digit and is not redacted; licence numbers match by shape only (precision 0.87 on the sample); postcodes and addresses have no NZ-specific recogniser
 - S3 inbox, S3 outbound writes, live Postgres, and scheduler paths are implemented but less integration-tested than the HTTP sanitize path
 - No request body size limit, rate limiting, or multi-key rotation on the HTTP API
 - Dockerfile does not download a spaCy model (CI/README do)—verify image startup before assuming a clean `docker compose up`

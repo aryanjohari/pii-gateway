@@ -252,7 +252,29 @@ Presidio's detector (the `AnalyzerEngine` the API uses) scored on a hand-written
 
 Dataset: 90 sentences ([`eval/dataset.jsonl`](eval/dataset.jsonl)), 19 of them with no personal data. Reproduce with `python -m eval.run_eval`, which rewrites [`eval/results.md`](eval/results.md) (including per-sentence latency, which varies by machine).
 
-**Limitations of this measurement:** synthetic, templated English sentences with fictional data, so real text will score lower; 24–31 examples per type is a small sample, and each type is only just past the ~20 needed to treat a per-type number as more than an anecdote; US-style phone formats only; no names, phones or addresses in NZ formats yet. The dataset was written before the first run and not changed afterwards.
+**Limitations of this measurement:** synthetic, templated English sentences with fictional data, so real text will score lower; 24–31 examples per type is a small sample, and each type is only just past the ~20 needed to treat a per-type number as more than an anecdote; US-style phone formats only (NZ identifiers are measured separately below). The dataset was written before the first run and not changed afterwards.
+
+### NZ identifiers
+
+The NZ recognisers (NHI number, IRD number, driver licence) are scored on a second hand-written dataset with [`config.nz.yaml`](config/examples/config.nz.yaml), the same way. Formats and sources: [docs/research/nz-identifiers.md](docs/research/nz-identifiers.md); design: [ADR 0005](docs/adr/0005-checksum-validated-nz-recognisers.md).
+
+| Entity | Labeled spans | False positives | Misses | Precision | Recall | F1 | Recall before |
+|---|---|---|---|---|---|---|---|
+| `NZ_NHI` | 27 | 0 | 0 | 1.00 | 1.00 | 1.00 | 0.00 |
+| `NZ_IRD` | 26 | 0 | 0 | 1.00 | 1.00 | 1.00 | 0.00 |
+| `NZ_DRIVER_LICENCE` | 26 | 4 | 0 | 0.87 | 1.00 | 0.93 | 0.00 |
+| `PHONE_NUMBER` (NZ formats) | 28 | 2 | 0 | 0.93 | 1.00 | 0.97 | 1.00 |
+
+"Recall before" is default Presidio on the same data ([`eval/results_nz_baseline.md`](eval/results_nz_baseline.md)), committed before any recogniser existed. Phone detection is Presidio's own, unchanged: it already finds these formats, and its two false alarms are IRD numbers it reads as phones (redacted either way; only the label can differ).
+
+Dataset: 133 sentences ([`eval/dataset_nz.jsonl`](eval/dataset_nz.jsonl)), 30 of them with no NZ identifier, including look-alikes: checksum-invalid NHI and IRD numbers, IRD-shaped numbers outside the valid range, order numbers and part numbers. Reproduce with `python -m eval.run_eval --policy config/examples/config.nz.yaml --dataset eval/dataset_nz.jsonl --output eval/results_nz.md`.
+
+**Reading these numbers:**
+- NHI and IRD are validated with the issuer's published check digit, so the look-alikes are rejected. A perfect score on a dataset written by the author, who knew the algorithm, shows the code implements the published check; it does not predict 1.00 on real text.
+- A valid check digit means a number is well-formed, not that it was ever issued.
+- The driver licence has no published checksum, so any two capital letters followed by six digits matches. The four false alarms are part numbers of that shape, and context words ("licence", "driver") raise the score but cannot separate them.
+
+**Limitations of this measurement:** 26–28 examples per type is a small sample, only just past the ~20 needed to call a per-type number more than an anecdote. The phone examples use only four distinct numbers in different formats, so they measure format coverage, not number variety. NHI examples all use the reserved `Z` test prefix. IRD examples mostly come from the 150M–200M range, which I believe is unissued but could not confirm, and the dashed and spaced IRD forms are assumed. Matching is upper case only. Postcodes and addresses are not detected as NZ types.
 
 ---
 
@@ -261,6 +283,7 @@ Dataset: 90 sentences ([`eval/dataset.jsonl`](eval/dataset.jsonl)), 19 of them w
 - **Best-effort redaction.** Presidio NLP produces false negatives (missed personal data) and false positives. The [Evaluation](#evaluation) numbers come from clean synthetic sentences, so they are an optimistic baseline, not a promise for your data. Do not rely on it as the only control.
 - **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
 - **English only.** The NLP path loads English models.
+- **NZ identifiers are checked, not looked up.** A mistyped NHI or IRD number fails its check digit and is **not redacted**. Driver licence numbers have no published checksum, so look-alike codes are also redacted (precision 0.87 on the sample). A zero-padded IRD number in prose is not detected. A policy with an empty `redaction_entities` runs every recogniser, including the NZ ones.
 - **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
 - **Batch connectors are less tested** than the HTTP path (S3 inbox, scheduler, Postgres job).
 

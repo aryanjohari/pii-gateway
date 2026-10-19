@@ -39,4 +39,4 @@ Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.
 - Never tag, push, or trigger the publish workflow (`v*` tags publish an image to GHCR) without explicit approval for that action.
 - Never rewrite git history without explicit approval.
 - Local-only files (untracked, kept on disk, listed in `.gitignore`): `resume.md`, `.cursorrules`, `architecture.plan.md`, `docs/archive/`. Treat as read-only unless asked.
-- Out of scope until planned: evaluation harness, NZ recognisers, LLM proxy, rate-limit proxy-IP fix, pre-commit, dependency lockfile.
+- Out of scope until planned: NZ postcode and address recognisers, LLM proxy, rate-limit proxy-IP fix, pre-commit, dependency lockfile.
