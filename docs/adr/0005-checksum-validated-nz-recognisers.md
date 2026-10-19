@@ -33,7 +33,16 @@ How Presidio treats a pattern recogniser's result (read in `pattern_recognizer.p
 - Driver licence numbers in the dataset are random letter-digit strings and could coincide with real cards; ones in the dataset were not checked against anything.
 - `NZ_IRD` and the built-in `PHONE_NUMBER` can match the same IRD number. The analyzer returns both; the anonymizer keeps the higher score, so the text is redacted either way and only the label differs. With an IRD context word nearby `NZ_IRD` wins (0.85 against 0.75, or 0.65 against 0.4); without one a grouped number like `168-507-968` can be labelled `PHONE_NUMBER`. The eval scores each type separately and does not merge overlaps, so it still counts those as phone false alarms.
 - The IRD recogniser never matches a digit run that starts with 0. Inland Revenue's file format pads an 8-digit number with a leading zero (`ird_is_valid` accepts that form), but in free text a leading zero is far more likely a phone number, and about 1 in 10 landline-shaped strings (`099124008`) pass the check digit by chance. The cost is that a zero-padded IRD number written in prose is not detected. The NZ dataset has no such look-alikes (it was frozen before this was found), so only the unit tests cover it.
-- Phone choice (extend Presidio's `PhoneRecognizer` regions versus a custom pattern) is deferred to a measurement in step 3.8 and recorded here afterwards.
+- **Phone: keep Presidio's built-in `PHONE_NUMBER` unchanged (step 3.8).** Measured on the NZ dataset (28 labeled phones, `PHONE_NUMBER` only; the first two rows are the committed baseline):
+
+  | Option | TP | FP | FN | Non-NZ phones (Phase 2 dataset, 24 labeled) |
+  |---|---|---|---|---|
+  | Built-in recogniser | 28 | 2 | 0 | 24 found |
+  | Built-in plus `NZ` added to its regions | 28 | 2 | 0 | 24 found |
+  | Custom NZ pattern replacing the built-in (ComCom structure) | 28 | 0 | 0 | **0 found** |
+
+  Adding `NZ` changed nothing, so it is not worth a code change. The custom pattern removed the two false alarms only by replacing the built-in, which would stop detecting any non-NZ number; added next to it instead, it could not remove the built-in's false alarms. I also wrote its patterns after seeing the dataset's formats, so its clean score is optimistic, and it would rest on a draft Commerce Commission document. The two false alarms are IRD numbers (`168-507-968`, `169295573`) that the built-in reads as phones. They are redacted either way; only the label can differ (see the overlap note above).
+- The built-in's `UK_NHS` clash (a NZ mobile that passes the UK NHS checksum by chance, about 1 in 11, is also flagged `UK_NHS` at 1.0) cannot appear under an explicit entity list such as `config.nz.yaml` or the demo policy. It can appear when `redaction_entities` is empty, which runs every recogniser; the number is still redacted.
 
 ## Alternatives considered
 - **Pattern-only, no checksum:** simplest, but NHI and IRD shapes (letters + digits, 9 digits) match a lot of ordinary text.
