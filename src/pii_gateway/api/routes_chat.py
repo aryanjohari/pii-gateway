@@ -14,7 +14,7 @@ from pii_gateway.api.chat_redaction import Message, message_texts, redact_chat_m
 from pii_gateway.api.chat_schemas import ChatCompletionRequest
 from pii_gateway.api.chat_stream import relay_stream
 from pii_gateway.api.middleware import get_correlation_id
-from pii_gateway.api.rate_limit import client_rate_limit_key
+from pii_gateway.api.rate_limit import client_rate_limit_key, resolve_client_host
 from pii_gateway.api.request_limits import enforce_content_length
 from pii_gateway.logging_config import get_logger, log_event
 from pii_gateway.settings import Settings
@@ -211,7 +211,11 @@ def _enforce_rate_limit(request: Request) -> None:
     rate_allow = getattr(request.app.state, "sanitize_rate_allow", None)
     if not callable(rate_allow):
         return
-    client = request.client.host if request.client else None
+    client = resolve_client_host(
+        request.client.host if request.client else None,
+        request.headers,
+        request.app.state.settings.trusted_proxy_header,
+    )
     key = client_rate_limit_key(client, bool(request.headers.get("X-API-Key")))
     if not rate_allow(key):
         raise _error(

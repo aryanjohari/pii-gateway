@@ -34,6 +34,34 @@ def test_sanitize_rate_limited(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert body["error"]["code"] == "rate_limited"
 
 
+def _post_as(client: TestClient, ip: str) -> int:
+    headers = {"X-API-Key": "test-key", "CF-Connecting-IP": ip}
+    return client.post("/v1/sanitize", headers=headers, json={"text": "a"}).status_code
+
+
+def test_rate_limit_buckets_per_client_when_proxy_header_trusted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _base_env(tmp_path, monkeypatch)
+    monkeypatch.setenv("SANITIZE_RATE_LIMIT_PER_MINUTE", "1")
+    monkeypatch.setenv("TRUSTED_PROXY_HEADER", "CF-Connecting-IP")
+    with TestClient(create_app()) as client:
+        assert _post_as(client, "9.9.9.1") == 200
+        assert _post_as(client, "9.9.9.1") == 429
+        assert _post_as(client, "9.9.9.2") == 200
+
+
+def test_rate_limit_ignores_proxy_header_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _base_env(tmp_path, monkeypatch)
+    monkeypatch.setenv("SANITIZE_RATE_LIMIT_PER_MINUTE", "1")
+    monkeypatch.delenv("TRUSTED_PROXY_HEADER", raising=False)
+    with TestClient(create_app()) as client:
+        assert _post_as(client, "9.9.9.1") == 200
+        assert _post_as(client, "9.9.9.2") == 429
+
+
 def test_sanitize_rejects_oversize_chars(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

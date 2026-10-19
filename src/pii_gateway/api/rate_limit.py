@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 
 def create_sliding_window_limiter(
@@ -40,3 +40,20 @@ def client_rate_limit_key(client_host: str | None, api_key_present: bool) -> str
     host = (client_host or "").strip() or "unknown"
     suffix = "authed" if api_key_present else "anon"
     return f"{host}:{suffix}"
+
+
+def resolve_client_host(
+    direct_host: str | None,
+    headers: Mapping[str, str],
+    trusted_header: str,
+) -> str | None:
+    """Return the client host to rate-limit on.
+
+    The header is read only when ``trusted_header`` names one: any client can send any header,
+    so trusting one by default would let callers dodge limits by rotating its value. Only set
+    it when a proxy you control overwrites the header and the app is not reachable around it.
+    """
+    if not trusted_header:
+        return direct_host
+    forwarded = headers.get(trusted_header, "").split(",")[0].strip()
+    return forwarded or direct_host

@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from pii_gateway.api.auth import verify_http_auth
 from pii_gateway.api.middleware import get_correlation_id
-from pii_gateway.api.rate_limit import client_rate_limit_key
+from pii_gateway.api.rate_limit import client_rate_limit_key, resolve_client_host
 from pii_gateway.api.request_limits import enforce_char_budget, enforce_content_length
 from pii_gateway.api.schemas import SanitizeRequest, SanitizeSuccessResponse
 from pii_gateway.core.sanitize_pipeline import sanitize_payload
@@ -27,7 +27,11 @@ async def sanitize(request: Request, body: SanitizeRequest) -> SanitizeSuccessRe
 
     rate_allow = getattr(request.app.state, "sanitize_rate_allow", None)
     if callable(rate_allow):
-        client = request.client.host if request.client else None
+        client = resolve_client_host(
+            request.client.host if request.client else None,
+            request.headers,
+            settings.trusted_proxy_header,
+        )
         key = client_rate_limit_key(client, bool(request.headers.get("X-API-Key")))
         if not rate_allow(key):
             raise HTTPException(
