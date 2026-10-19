@@ -20,6 +20,7 @@ type SanitizeErr = {
 export function useSanitize() {
   const [state, setState] = useState<DemoState>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [original, setOriginal] = useState<string>("");
   const [output, setOutput] = useState<string>("");
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [durationMs, setDurationMs] = useState<number | null>(null);
@@ -32,6 +33,7 @@ export function useSanitize() {
   async function submit(mode: Mode, text: string, jsonText: string) {
     setState("loading");
     setMessage(null);
+    setOriginal("");
     setOutput("");
     setSummary(null);
     setDurationMs(null);
@@ -77,6 +79,7 @@ export function useSanitize() {
         mode === "text"
           ? String(ok.result.text ?? "")
           : JSON.stringify(ok.result.structured ?? ok.result, null, 2);
+      setOriginal(mode === "text" ? text : jsonText);
       setOutput(pretty);
       setSummary(ok.meta?.entity_summary ?? null);
       setDurationMs(ok.meta?.duration_ms ?? null);
@@ -87,5 +90,5 @@ export function useSanitize() {
     }
   }
 
-  return { state, message, output, summary, durationMs, submit, reset };
+  return { state, message, original, output, summary, durationMs, submit, reset };
 }
