@@ -94,9 +94,26 @@ def test_undeclared_fields_are_rejected_not_forwarded(payload: dict[str, Any]) -
     assert "unsupported_field" in _error_types(payload)
 
 
-def test_streaming_is_rejected_until_it_is_supported() -> None:
-    payload = {"model": "m", "messages": [{"role": "user", "content": "x"}], "stream": True}
-    assert "streaming_not_supported" in _error_types(payload)
+def test_streaming_and_its_options_are_accepted() -> None:
+    request = ChatCompletionRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [{"role": "user", "content": "x"}],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+    )
+    assert request.stream is True
+
+
+def test_unknown_stream_option_is_rejected() -> None:
+    payload = {
+        "model": "m",
+        "messages": [{"role": "user", "content": "x"}],
+        "stream": True,
+        "stream_options": {"include_usage": True, "surprise": 1},
+    }
+    assert "unsupported_field" in _error_types(payload)
 
 
 def test_error_text_does_not_echo_message_content() -> None:

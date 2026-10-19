@@ -5,7 +5,7 @@ Zoom of the single FastAPI / Uvicorn process (`Dockerfile` CMD). All components 
 | ID | Code area | Role |
 |----|-----------|------|
 | Sanitize API | `api/routes_sanitize.py`, `api/schemas.py` | `POST /v1/sanitize` |
-| Chat proxy API | `api/routes_chat.py`, `api/chat_schemas.py`, `api/chat_redaction.py` | `POST /v1/chat/completions`: validate a supported subset, redact, forward, relay |
+| Chat proxy API | `api/routes_chat.py`, `api/chat_schemas.py`, `api/chat_redaction.py`, `api/chat_stream.py` | `POST /v1/chat/completions`: validate a supported subset, redact, forward, relay (JSON or event stream) |
 | Text redactor | `core/redact_texts.py` | Format-neutral `redact_texts(list[str])`; no provider types, no logging |
 | Upstream LLM client | `main.py` lifespan | One `httpx.AsyncClient` for `LLM_UPSTREAM_BASE_URL`; closed on shutdown |
 | Internal jobs API | `api/routes_internal.py` | `POST /internal/jobs/postgres-batch`, `POST /internal/jobs/file-ingest` |

@@ -94,11 +94,10 @@ def test_callers_upstream_key_is_required(
     ("payload", "code"),
     [
         (_payload([{"type": "image_url", "image_url": {}}]), "unsupported_content_type"),
-        ({**_payload(), "stream": True}, "streaming_not_supported"),
         ({**_payload(), "tools": []}, "unsupported_field"),
         ({"model": "m", "messages": []}, "invalid_request"),
     ],
-    ids=["image_part", "stream", "undeclared_field", "empty_messages"],
+    ids=["image_part", "undeclared_field", "empty_messages"],
 )
 def test_unsupported_requests_are_rejected_and_nothing_is_forwarded(
     chat_client: TestClient,

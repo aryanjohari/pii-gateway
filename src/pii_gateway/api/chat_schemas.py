@@ -70,23 +70,20 @@ class ToolMessage(_StrictModel):
     tool_call_id: str
 
 
+class StreamOptions(_StrictModel):
+    include_usage: bool | None = None
+    include_obfuscation: bool | None = None
+
+
 class ChatCompletionRequest(_StrictModel):
     model: str = Field(min_length=1)
     messages: list[Annotated[ChatMessage | ToolMessage, Field(discriminator="role")]] = Field(
         min_length=1
     )
     stream: bool = False
+    stream_options: StreamOptions | None = None
     temperature: float | None = None
     top_p: float | None = None
     max_tokens: int | None = None
     max_completion_tokens: int | None = None
     n: int | None = None
-
-    @model_validator(mode="after")
-    def reject_streaming(self) -> "ChatCompletionRequest":
-        if self.stream:
-            raise PydanticCustomError(
-                "streaming_not_supported",
-                "stream=true is not supported yet",
-            )
-        return self

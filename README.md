@@ -25,7 +25,7 @@ Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that 
 ## Features (verified in this repo)
 
 - `POST /v1/sanitize` — live text and/or nested JSON; `X-API-Key` auth (missing server key → 503)
-- `POST /v1/chat/completions` — OpenAI-compatible proxy: redacts message text, forwards to the upstream LLM you configure (non-streaming; see [LLM proxy](#llm-proxy-openai-compatible))
+- `POST /v1/chat/completions` — OpenAI-compatible proxy: redacts message text, forwards to the upstream LLM you configure (streaming supported; see [LLM proxy](#llm-proxy-openai-compatible))
 - Mounted YAML/JSON **policy**: entity types, per-field rules (`redact` / `tokenize` / `mask` / `passthrough`), persistence flags
 - **Fail-closed structured walk** — undeclared string fields still go through Presidio
 - Optional **Postgres batch** (named SQL from policy only) and **file inbox** (local or S3-compatible)
@@ -240,7 +240,7 @@ client = OpenAI(
 |--------|--------------|------|
 | 401 | `unauthorized` / `missing_upstream_key` | Wrong or missing `X-API-Key` / no `Authorization` header |
 | 413 | `payload_too_large` | Body or character budget exceeded (same limits as sanitize) |
-| 422 | `unsupported_content_type`, `unsupported_field`, `streaming_not_supported`, `invalid_json`, `invalid_request` | Request outside the supported subset |
+| 422 | `unsupported_content_type`, `unsupported_field`, `invalid_json`, `invalid_request` | Request outside the supported subset |
 | 429 | `rate_limited` | Shares the sanitize rate limit |
 | 500 | `internal_error` | Redaction failed; nothing was forwarded |
 | 502 / 504 | `upstream_unreachable`, `upstream_bad_response` / `upstream_timeout` | Upstream down, unusable reply, or too slow |
@@ -249,7 +249,9 @@ client = OpenAI(
 
 Errors use the OpenAI shape (`{"error": {"message", "type", "param", "code"}}`); the OpenAI Python SDK raised them as typed errors in testing.
 
-**What is and is not scanned.** Scanned: string `content` and `text` parts of `system`, `developer`, `user`, `assistant` and `tool` messages. Everything else is **rejected with a 422, never forwarded unscanned**: image, audio and file parts, `tools`/`functions`/`tool_calls`, `name`, `stop`, `response_format`, `metadata`, `user`, and any other field outside a short allow-list (`model`, `messages`, `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `n`). `stream: true` is rejected for now.
+**What is and is not scanned.** Scanned: string `content` and `text` parts of `system`, `developer`, `user`, `assistant` and `tool` messages. Everything else is **rejected with a 422, never forwarded unscanned**: image, audio and file parts, `tools`/`functions`/`tool_calls`, `name`, `stop`, `response_format`, `metadata`, `user`, and any other field outside a short allow-list (`model`, `messages`, `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `n`).
+
+**Streaming.** `stream: true` is supported (and `stream_options`). The whole request is redacted before anything is sent; the upstream's events are then relayed as they arrive, so the time to the first event includes the redaction time above. Errors before the stream starts use the table above. If the upstream breaks mid-stream, the gateway ends the stream with an error event (`upstream_stream_interrupted`). If the caller disconnects, the upstream request is closed. Tested over real sockets with the OpenAI SDK against a stub upstream: events arrived about when the upstream sent them, and a disconnect reached the upstream. Reply events are not scanned.
 
 **What it cannot do.**
 - A missed entity reaches the LLM. Precision and recall are in [Evaluation](#evaluation) and [NZ identifiers](#nz-identifiers); those numbers come from synthetic sentences. In one probe, the Maori name "Aroha Ngata" was not detected as `PERSON` by the English spaCy model (one example, not a measurement).
@@ -346,7 +348,7 @@ Dataset: 133 sentences ([`eval/dataset_nz.jsonl`](eval/dataset_nz.jsonl)), 30 of
 - **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
 - **English only.** The NLP path loads English models.
 - **NZ identifiers are checked, not looked up.** A mistyped NHI or IRD number fails its check digit and is **not redacted**. Driver licence numbers have no published checksum, so look-alike codes are also redacted (precision 0.87 on the sample). A zero-padded IRD number in prose is not detected. A policy with an empty `redaction_entities` runs every recogniser, including the NZ ones.
-- **LLM proxy is OpenAI-format and non-streaming only.** Images, tools and unknown fields are rejected, replies keep placeholders, and a missed entity reaches the upstream. See [LLM proxy](#llm-proxy-openai-compatible).
+- **LLM proxy is OpenAI-format only.** Images, tools and unknown fields are rejected, replies keep placeholders, and a missed entity reaches the upstream. See [LLM proxy](#llm-proxy-openai-compatible).
 - **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
 - **Batch connectors are less tested** than the HTTP path (S3 inbox, scheduler, Postgres job).
 

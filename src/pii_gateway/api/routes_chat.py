@@ -6,12 +6,13 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import ValidationError
 
 from pii_gateway.api.auth import verify_http_auth
 from pii_gateway.api.chat_redaction import Message, message_texts, redact_chat_messages
 from pii_gateway.api.chat_schemas import ChatCompletionRequest
+from pii_gateway.api.chat_stream import relay_stream
 from pii_gateway.api.middleware import get_correlation_id
 from pii_gateway.api.rate_limit import client_rate_limit_key
 from pii_gateway.api.request_limits import enforce_content_length
@@ -21,18 +22,18 @@ from pii_gateway.settings import Settings
 logger = get_logger(__name__)
 router = APIRouter(tags=["chat"])
 
-_REJECTION_CODES = {"unsupported_content_type", "unsupported_field", "streaming_not_supported"}
+_REJECTION_CODES = {"unsupported_content_type", "unsupported_field"}
 
 
 @router.post("/v1/chat/completions")
-async def chat_completions(request: Request) -> JSONResponse:
+async def chat_completions(request: Request) -> Response:
     try:
         return await _proxy(request)
     except HTTPException as exc:
         return _openai_error(exc)
 
 
-async def _proxy(request: Request) -> JSONResponse:
+async def _proxy(request: Request) -> Response:
     settings: Settings = request.app.state.settings
     enforce_content_length(request, settings)
     _enforce_rate_limit(request)
@@ -61,12 +62,14 @@ async def _proxy(request: Request) -> JSONResponse:
     t0 = time.monotonic()
     cleaned, summary = _redact(request, chat_request, cid)
     payload = chat_request.model_copy(update={"messages": cleaned}).model_dump(exclude_unset=True)
-    upstream = await _forward(llm_client, payload, upstream_authorization, cid)
+    upstream = await _forward(
+        llm_client, payload, upstream_authorization, cid, stream=chat_request.stream
+    )
 
     log_event(
         logger,
         logging.INFO,
-        "chat_complete",
+        "chat_stream_started" if chat_request.stream else "chat_complete",
         correlation_id=cid,
         adapter="openai_chat",
         config_version=policy.config_version,
@@ -75,7 +78,10 @@ async def _proxy(request: Request) -> JSONResponse:
         entity_summary=summary,
         http_status=upstream.status_code,
     )
-    return _relay(upstream, llm_client.base_url.host)
+    host = llm_client.base_url.host
+    if chat_request.stream:
+        return await _stream_response(upstream, host, cid)
+    return _relay(upstream, host)
 
 
 def _redact(
@@ -105,14 +111,20 @@ def _redact(
 
 
 async def _forward(
-    llm_client: httpx.AsyncClient, payload: dict[str, Any], authorization: str, cid: str
+    llm_client: httpx.AsyncClient,
+    payload: dict[str, Any],
+    authorization: str,
+    cid: str,
+    *,
+    stream: bool,
 ) -> httpx.Response:
     """POST to the upstream; transport failures become gateway errors that name only its host."""
     host = llm_client.base_url.host
+    upstream_request = llm_client.build_request(
+        "POST", "chat/completions", json=payload, headers={"Authorization": authorization}
+    )
     try:
-        return await llm_client.post(
-            "chat/completions", json=payload, headers={"Authorization": authorization}
-        )
+        return await llm_client.send(upstream_request, stream=stream)
     except httpx.TimeoutException:
         code, http_status, message = "upstream_timeout", 504, f"Upstream {host} timed out"
     except httpx.RequestError:
@@ -136,13 +148,30 @@ def _relay(upstream: httpx.Response, host: str) -> JSONResponse:
             return JSONResponse(status_code=upstream.status_code, content=upstream.json())
         except ValueError:
             pass
-    elif upstream.is_client_error or upstream.is_server_error:
-        raise _error(
+    raise _upstream_failure(upstream, host)
+
+
+async def _stream_response(upstream: httpx.Response, host: str, cid: str) -> StreamingResponse:
+    if not upstream.is_success:
+        await upstream.aclose()
+        raise _upstream_failure(upstream, host)
+    return StreamingResponse(
+        relay_stream(upstream, host, cid),
+        status_code=upstream.status_code,
+        media_type=upstream.headers.get("content-type", "text/event-stream"),
+        # no-store and no proxy buffering, or reverse proxies hold the events back
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _upstream_failure(upstream: httpx.Response, host: str) -> HTTPException:
+    if upstream.is_client_error or upstream.is_server_error:
+        return _error(
             upstream.status_code,
             "upstream_error",
             f"Upstream {host} returned status {upstream.status_code}",
         )
-    raise _error(
+    return _error(
         status.HTTP_502_BAD_GATEWAY,
         "upstream_bad_response",
         f"Upstream {host} returned an unusable response (status {upstream.status_code})",
