@@ -29,6 +29,8 @@ How Presidio treats a pattern recogniser's result (read in `pattern_recognizer.p
 - NHI matching is uppercase-only to start (the standard defines upper case). Lowercase NHI numbers are a known gap.
 - The test data cannot cover realistic NHI first letters: only the `Z` prefix is reserved for tests.
 - The IRD "unissued numbers above 150,000,000" assumption for safe synthetic data is an interpretation, not confirmed.
+- NZ phone data uses only four numbers, taken from illustrative examples in a Commerce Commission draft document, written in several formats. No primary source gave a reserved fictional range (the NAD allocation rules v7.1 use "reserved" only for code-block allocation). Those four may be real subscriber numbers, and the phone results measure format variety, not number variety.
+- Driver licence numbers in the dataset are random letter-digit strings and could coincide with real cards; ones in the dataset were not checked against anything.
 - Phone choice (extend Presidio's `PhoneRecognizer` regions versus a custom pattern) is deferred to a measurement in step 3.8 and recorded here afterwards.
 
 ## Alternatives considered
