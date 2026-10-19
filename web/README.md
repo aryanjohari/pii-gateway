@@ -34,4 +34,4 @@ The playground is **policy-first**: declared JSON fields get deterministic place
 2. Set secrets: `PII_GATEWAY_API_URL`, `PII_GATEWAY_API_KEY`.
 3. Deploy. When your Raspberry Pi tunnel is ready, update `PII_GATEWAY_API_URL` to the tunnel URL (see [docs/DEPLOY_PI.md](../docs/DEPLOY_PI.md)).
 
-Do not put real PII in the public demo. After pulling gateway policy changes, remount/restart the Pi container with the updated [`config.demo.yaml`](../config/examples/config.demo.yaml).
+Do not put real PII in the public demo. After pulling gateway policy changes, remount/restart the Pi container with the updated [`config.demo-nz.yaml`](../config/examples/config.demo-nz.yaml).

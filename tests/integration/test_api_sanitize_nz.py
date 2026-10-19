@@ -24,3 +24,18 @@ def test_sanitize_redacts_nz_identifiers_and_keeps_numbers_that_fail_the_checksu
     for label in ("<NZ_NHI>", "<NZ_IRD>", "<NZ_DRIVER_LICENCE>", "<PHONE_NUMBER>"):
         assert label in redacted
     assert "ZAC5360" in redacted  # fails the check digit, so it is not treated as an NHI
+
+
+DEMO_NZ_POLICY = Path(__file__).resolve().parents[2] / "config" / "examples" / "config.demo-nz.yaml"
+
+
+@pytest.mark.parametrize("client", [DEMO_NZ_POLICY], indirect=True)
+def test_demo_nz_policy_redacts_the_playground_presets(client: TestClient) -> None:
+    text = "Email Aroha Smith at aroha@example.com about NHI ZAC5361, licence AB123456."
+    r = client.post("/v1/sanitize", headers={"X-API-Key": "test-key"}, json={"text": text})
+    assert r.status_code == 200
+    redacted = r.json()["result"]["text"]
+    for raw in ("aroha@example.com", "ZAC5361", "AB123456"):
+        assert raw not in redacted
+    for label in ("<EMAIL_ADDRESS>", "<NZ_NHI>", "<NZ_DRIVER_LICENCE>"):
+        assert label in redacted
