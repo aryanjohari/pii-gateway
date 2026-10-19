@@ -3,10 +3,9 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 import { BeforeAfter } from "./BeforeAfter";
+import { PRESETS, type Preset } from "@/lib/presets";
 import { useSanitize, type Mode } from "./useSanitize";
 
-const TEXT_SAMPLE =
-  "Please email alice@example.com about the invoice.";
 const JSON_SAMPLE = `{
   "email": "bob@example.com",
   "full_name": "Bob Smith",
@@ -15,7 +14,7 @@ const JSON_SAMPLE = `{
 
 export function Playground() {
   const [mode, setMode] = useState<Mode>("text");
-  const [text, setText] = useState(TEXT_SAMPLE);
+  const [text, setText] = useState(PRESETS[0].text);
   const [jsonText, setJsonText] = useState(JSON_SAMPLE);
   const { state, message, original, output, summary, durationMs, submit, reset } = useSanitize();
 
@@ -30,14 +29,9 @@ export function Playground() {
     void submit(mode, text, jsonText);
   }
 
-  function loadSample(kind: "email" | "name") {
-    if (kind === "email") {
-      setMode("text");
-      setText("Contact alice@example.com for details.");
-    } else {
-      setMode("json");
-      setJsonText(JSON_SAMPLE);
-    }
+  function loadPreset(preset: Preset) {
+    setMode("text");
+    setText(preset.text);
     reset();
   }
 
@@ -72,9 +66,12 @@ export function Playground() {
           <ModeButton active={mode === "json"} onClick={() => setMode("json")}>
             JSON
           </ModeButton>
-          <div className="ml-auto flex gap-2">
-            <SampleChip onClick={() => loadSample("email")}>Email sample</SampleChip>
-            <SampleChip onClick={() => loadSample("name")}>Name + JSON sample</SampleChip>
+          <div role="group" aria-label="NZ sample text" className="ml-auto flex flex-wrap gap-2">
+            {PRESETS.map((preset) => (
+              <SampleChip key={preset.id} onClick={() => loadPreset(preset)}>
+                {preset.label}
+              </SampleChip>
+            ))}
           </div>
         </div>
 
