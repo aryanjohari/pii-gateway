@@ -11,6 +11,7 @@ from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 from starlette.testclient import TestClient
 
+from pii_gateway.llm_client import create_llm_client
 from pii_gateway.policy_schema import BatchFileIngestConfig, GatewayPolicy, PostgresBatchConfig
 from pii_gateway.settings import Settings
 from pii_gateway.storage.local_volume_backend import LocalVolumeBackend
@@ -86,8 +87,10 @@ def install_upstream(
             return handler(request)
 
         state = chat_client.app.state  # type: ignore[attr-defined]
-        state.llm_client = httpx.AsyncClient(
-            transport=httpx.MockTransport(recording), base_url=state.llm_client.base_url
+        state.llm_client = create_llm_client(
+            str(state.llm_client.base_url),
+            state.settings.llm_upstream_timeout_seconds,
+            transport=httpx.MockTransport(recording),
         )
         return calls
 

@@ -225,9 +225,7 @@ def _error(status_code: int, code: str, message: str) -> HTTPException:
 
 def _openai_error(exc: HTTPException) -> JSONResponse:
     """Re-shape a gateway error as ``{"error": {message, type, param, code}}`` for OpenAI SDKs."""
-    detail: Any = exc.detail
-    if not (isinstance(detail, dict) and "code" in detail and "message" in detail):
-        detail = {"code": "http_error", "message": "Request failed"}
+    detail: Any = exc.detail  # every HTTPException on this route is built by _error()
     error_type = "invalid_request_error" if exc.status_code < 500 else "server_error"
     return JSONResponse(
         status_code=exc.status_code,

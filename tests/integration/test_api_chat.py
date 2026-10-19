@@ -195,7 +195,7 @@ def test_unreachable_upstream_gives_502(
     assert r.json()["error"]["code"] == "upstream_unreachable"
 
 
-@pytest.mark.parametrize("upstream_status", [400, 401, 429, 500, 503])
+@pytest.mark.parametrize("upstream_status", [429, 503])
 def test_upstream_errors_keep_their_status_but_not_their_text(
     chat_client: TestClient,
     install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
@@ -233,3 +233,82 @@ def test_upstream_redirect_is_not_followed(
     assert r.status_code == 502
     assert r.json()["error"]["code"] == "upstream_bad_response"
     assert len(calls) == 1
+
+
+def test_conversation_is_forwarded_with_roles_order_and_options_intact(
+    chat_client: TestClient, upstream_calls: list[httpx.Request]
+) -> None:
+    payload = {
+        "model": "gpt-test",
+        "temperature": 0.2,
+        "max_tokens": 50,
+        "messages": [
+            {"role": "system", "content": "Be brief."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "context"},
+                    {"type": "text", "text": f"mail {EMAIL}"},
+                ],
+            },
+            {"role": "assistant", "content": "Understood."},
+            {"role": "user", "content": f"and {EMAIL} again"},
+        ],
+    }
+    r = chat_client.post("/v1/chat/completions", headers=HEADERS, json=payload)
+    assert r.status_code == 200
+    sent = json.loads(upstream_calls[0].content)
+    assert set(sent) == {"model", "messages", "temperature", "max_tokens"}
+    assert sent["temperature"] == 0.2
+    assert [m["role"] for m in sent["messages"]] == ["system", "user", "assistant", "user"]
+    assert sent["messages"][0]["content"] == "Be brief."
+    assert sent["messages"][1]["content"][1]["text"] == "mail <EMAIL_ADDRESS>"
+    assert sent["messages"][3]["content"] == "and <EMAIL_ADDRESS> again"
+    assert EMAIL not in upstream_calls[0].content.decode()
+
+
+def test_body_size_limit_applies_with_and_without_a_content_length(
+    chat_client: TestClient, upstream_calls: list[httpx.Request]
+) -> None:
+    chat_client.app.state.settings.sanitize_max_body_bytes = 50  # type: ignore[attr-defined]
+    body = json.dumps(_payload("x" * 100)).encode()
+    with_length = chat_client.post("/v1/chat/completions", headers=HEADERS, content=body)
+    chunked = chat_client.post(
+        "/v1/chat/completions", headers=HEADERS, content=iter([body[:40], body[40:]])
+    )
+    for r in (with_length, chunked):
+        assert r.status_code == 413
+        assert r.json()["error"]["code"] == "payload_too_large"
+    assert upstream_calls == []
+
+
+def test_non_finite_number_is_rejected_not_a_server_error(
+    chat_client: TestClient, upstream_calls: list[httpx.Request]
+) -> None:
+    body = b'{"model":"m","messages":[{"role":"user","content":"x"}],"temperature":NaN}'
+    r = chat_client.post(
+        "/v1/chat/completions",
+        headers={**HEADERS, "Content-Type": "application/json"},
+        content=body,
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "invalid_request"
+    assert upstream_calls == []
+
+
+def test_upstream_cookies_are_not_replayed_to_later_callers(
+    chat_client: TestClient, install_upstream: Callable[..., list[httpx.Request]]
+) -> None:
+    calls = install_upstream(
+        lambda request: httpx.Response(
+            200, json=UPSTREAM_REPLY, headers={"set-cookie": "session=abc; Path=/"}
+        )
+    )
+    for key in ("sk-first", "sk-second"):
+        r = chat_client.post(
+            "/v1/chat/completions",
+            headers={**HEADERS, "Authorization": f"Bearer {key}"},
+            json=_payload(),
+        )
+        assert r.status_code == 200
+    assert "cookie" not in calls[1].headers

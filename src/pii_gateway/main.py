@@ -18,6 +18,7 @@ from pii_gateway.api.routes_sanitize import router as sanitize_router
 from pii_gateway.config_loader import load_gateway_policy
 from pii_gateway.connectors.batch_postgres_sqlalchemy import create_batch_engine
 from pii_gateway.jobs.scheduler import setup_scheduler, shutdown_scheduler
+from pii_gateway.llm_client import create_llm_client
 from pii_gateway.logging_config import setup_logging
 from pii_gateway.settings import Settings, load_settings
 from pii_gateway.storage.outbound_interface import create_outbound_storage, ensure_state_dir
@@ -56,9 +57,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     llm_client: httpx.AsyncClient | None = None
     if settings.llm_upstream_base_url:
-        llm_client = httpx.AsyncClient(
-            base_url=settings.llm_upstream_base_url,
-            timeout=settings.llm_upstream_timeout_seconds,
+        llm_client = create_llm_client(
+            settings.llm_upstream_base_url, settings.llm_upstream_timeout_seconds
         )
     app.state.llm_client = llm_client
 

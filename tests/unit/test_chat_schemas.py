@@ -94,6 +94,21 @@ def test_undeclared_fields_are_rejected_not_forwarded(payload: dict[str, Any]) -
     assert "unsupported_field" in _error_types(payload)
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"model": "m", "messages": [{"role": "function", "content": "x", "name": "f"}]},
+        {"model": "m", "messages": [{"role": "user", "content": []}]},
+        {"model": "", "messages": [{"role": "user", "content": "x"}]},
+        {"model": "m", "messages": [{"role": "user", "content": "x"}], "temperature": float("nan")},
+        {"model": "m", "messages": [{"role": "user", "content": "x"}], "top_p": float("inf")},
+    ],
+    ids=["function_role", "empty_content_list", "blank_model", "nan_temperature", "inf_top_p"],
+)
+def test_malformed_requests_are_rejected(payload: dict[str, Any]) -> None:
+    assert _error_types(payload)
+
+
 def test_streaming_and_its_options_are_accepted() -> None:
     request = ChatCompletionRequest.model_validate(
         {

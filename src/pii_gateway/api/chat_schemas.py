@@ -82,8 +82,8 @@ class ChatCompletionRequest(_StrictModel):
     )
     stream: bool = False
     stream_options: StreamOptions | None = None
-    temperature: float | None = None
-    top_p: float | None = None
+    temperature: float | None = Field(default=None, allow_inf_nan=False)
+    top_p: float | None = Field(default=None, allow_inf_nan=False)
     max_tokens: int | None = None
     max_completion_tokens: int | None = None
     n: int | None = None

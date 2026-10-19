@@ -56,6 +56,29 @@ def test_list_form_text_parts_are_each_redacted() -> None:
     assert counts == {"EMAIL_ADDRESS": 1}
 
 
+def test_mixed_string_and_list_messages_each_get_their_own_redacted_text() -> None:
+    request = _request(
+        [
+            {"role": "user", "content": "first a@example.com"},
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "second"},
+                    {"type": "text", "text": "third b@example.com"},
+                ],
+            },
+            {"role": "user", "content": "fourth"},
+        ]
+    )
+    cleaned, counts = _redact(request)
+    assert cleaned[0].content == "first <EMAIL_ADDRESS>"
+    parts = cleaned[1].content
+    assert isinstance(parts, list)
+    assert [part.text for part in parts] == ["second", "third <EMAIL_ADDRESS>"]
+    assert cleaned[2].content == "fourth"
+    assert counts == {"EMAIL_ADDRESS": 2}
+
+
 def test_tool_call_id_survives_and_input_is_not_mutated() -> None:
     request = _request([{"role": "tool", "content": "carol@example.com", "tool_call_id": "call_1"}])
     cleaned, _ = _redact(request)
