@@ -4,10 +4,12 @@ from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
+from starlette.testclient import TestClient
 
 from pii_gateway.policy_schema import BatchFileIngestConfig, GatewayPolicy, PostgresBatchConfig
 from pii_gateway.settings import Settings
@@ -58,3 +60,35 @@ def make_job_app(
         return SimpleNamespace(state=state)  # type: ignore[return-value]
 
     return _make
+
+
+@pytest.fixture
+def upstream_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_UPSTREAM_BASE_URL", "https://llm.test/v1")
+
+
+@pytest.fixture
+def chat_client(upstream_env: None, client: TestClient) -> TestClient:
+    return client
+
+
+@pytest.fixture
+def install_upstream(
+    chat_client: TestClient,
+) -> Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]]:
+    """Replace the lifespan's upstream client with one that records calls, not the network."""
+
+    def install(handler: Callable[[httpx.Request], httpx.Response]) -> list[httpx.Request]:
+        calls: list[httpx.Request] = []
+
+        def recording(request: httpx.Request) -> httpx.Response:
+            calls.append(request)
+            return handler(request)
+
+        state = chat_client.app.state  # type: ignore[attr-defined]
+        state.llm_client = httpx.AsyncClient(
+            transport=httpx.MockTransport(recording), base_url=state.llm_client.base_url
+        )
+        return calls
+
+    return install

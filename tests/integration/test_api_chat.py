@@ -10,7 +10,6 @@ import httpx
 import pytest
 from starlette.testclient import TestClient
 
-BASE_URL = "https://llm.test/v1"
 GATEWAY_KEY = "test-key"
 CALLER_KEY = "sk-caller-secret"
 UPSTREAM_REPLY = {
@@ -22,48 +21,15 @@ EMAIL = "alice@example.com"
 HEADERS = {"X-API-Key": GATEWAY_KEY, "Authorization": f"Bearer {CALLER_KEY}"}
 
 
-def _payload(content: Any = f"Please email {EMAIL}") -> dict[str, Any]:
-    return {"model": "gpt-test", "messages": [{"role": "user", "content": content}]}
-
-
-@pytest.fixture
-def upstream_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LLM_UPSTREAM_BASE_URL", BASE_URL)
-
-
-@pytest.fixture
-def chat_client(upstream_env: None, client: TestClient) -> TestClient:
-    return client
-
-
-Handler = Callable[[httpx.Request], httpx.Response]
-
-
-@pytest.fixture
-def install_upstream(chat_client: TestClient) -> Callable[[Handler], list[httpx.Request]]:
-    """Replace the lifespan's upstream client with one that records calls, not the network."""
-
-    def install(handler: Handler) -> list[httpx.Request]:
-        calls: list[httpx.Request] = []
-
-        def recording(request: httpx.Request) -> httpx.Response:
-            calls.append(request)
-            return handler(request)
-
-        state = chat_client.app.state  # type: ignore[attr-defined]
-        state.llm_client = httpx.AsyncClient(
-            transport=httpx.MockTransport(recording), base_url=state.llm_client.base_url
-        )
-        return calls
-
-    return install
-
-
 @pytest.fixture
 def upstream_calls(
-    install_upstream: Callable[[Handler], list[httpx.Request]],
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
 ) -> list[httpx.Request]:
     return install_upstream(lambda request: httpx.Response(200, json=UPSTREAM_REPLY))
+
+
+def _payload(content: Any = f"Please email {EMAIL}") -> dict[str, Any]:
+    return {"model": "gpt-test", "messages": [{"role": "user", "content": content}]}
 
 
 def test_upstream_receives_only_redacted_text_and_the_callers_key(
@@ -74,7 +40,7 @@ def test_upstream_receives_only_redacted_text_and_the_callers_key(
     assert r.json() == UPSTREAM_REPLY
     assert len(upstream_calls) == 1
     sent = upstream_calls[0]
-    assert str(sent.url) == f"{BASE_URL}/chat/completions"
+    assert str(sent.url) == "https://llm.test/v1/chat/completions"
     body = json.loads(sent.content)
     assert EMAIL not in sent.content.decode()
     assert "<EMAIL_ADDRESS>" in body["messages"][0]["content"]
@@ -202,7 +168,8 @@ def _post(client: TestClient) -> httpx.Response:
 
 
 def test_upstream_timeout_gives_504_naming_the_upstream(
-    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+    chat_client: TestClient,
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
 ) -> None:
     def slow(request: httpx.Request) -> httpx.Response:
         raise httpx.ReadTimeout("took too long", request=request)
@@ -217,7 +184,8 @@ def test_upstream_timeout_gives_504_naming_the_upstream(
 
 
 def test_unreachable_upstream_gives_502(
-    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+    chat_client: TestClient,
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
 ) -> None:
     def refuse(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("refused", request=request)
@@ -231,7 +199,7 @@ def test_unreachable_upstream_gives_502(
 @pytest.mark.parametrize("upstream_status", [400, 401, 429, 500, 503])
 def test_upstream_errors_keep_their_status_but_not_their_text(
     chat_client: TestClient,
-    install_upstream: Callable[[Handler], list[httpx.Request]],
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
     upstream_status: int,
 ) -> None:
     echoed = {"error": {"message": f"bad prompt from {EMAIL}", "type": "x", "code": "y"}}
@@ -246,7 +214,8 @@ def test_upstream_errors_keep_their_status_but_not_their_text(
 
 
 def test_non_json_success_body_gives_502(
-    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+    chat_client: TestClient,
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
 ) -> None:
     install_upstream(lambda request: httpx.Response(200, text="<html>gateway</html>"))
     r = _post(chat_client)
@@ -255,7 +224,8 @@ def test_non_json_success_body_gives_502(
 
 
 def test_upstream_redirect_is_not_followed(
-    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+    chat_client: TestClient,
+    install_upstream: Callable[[Callable[[httpx.Request], httpx.Response]], list[httpx.Request]],
 ) -> None:
     calls = install_upstream(
         lambda request: httpx.Response(302, headers={"Location": "https://elsewhere.test/x"})

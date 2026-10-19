@@ -1,0 +1,26 @@
+# NZ identifier policy for the LLM proxy (POST /v1/chat/completions).
+# Same as config.nz.yaml plus PERSON, so names in prompts are replaced too. Kept separate so the
+# measured NZ results for config.nz.yaml stay valid. Detection is best-effort, and PERSON comes from
+# an English spaCy model: it misses some names, including some Maori and Pacific names.
+config_version: 1
+redaction_entities:
+  - PERSON
+  - NZ_NHI
+  - NZ_IRD
+  - NZ_DRIVER_LICENCE
+  - PHONE_NUMBER
+structured_field_rules:
+  phone: redact
+postgres_batch:
+  enabled: false
+  query_name: export_users
+  queries: {}
+batch_file_ingest:
+  mode: local
+  local_path: /data/inbox
+  poll_seconds: 60
+  s3_bucket: ""
+  s3_prefix: ""
+persistence:
+  write_raw: false
+  write_cleaned: false
