@@ -1,0 +1,90 @@
+{"text": "Please send the invoice to John Smith by Friday.", "spans": [{"start": 27, "end": 37, "type": "PERSON"}]}
+{"text": "Maria Garcia joined the support team last month.", "spans": [{"start": 0, "end": 12, "type": "PERSON"}]}
+{"text": "Ask Priya Patel about the quarterly report.", "spans": [{"start": 4, "end": 15, "type": "PERSON"}]}
+{"text": "The meeting was organised by Wei Chen and Ahmed Hassan.", "spans": [{"start": 29, "end": 37, "type": "PERSON"}, {"start": 42, "end": 54, "type": "PERSON"}]}
+{"text": "Thanks again, Emily Johnson, for the quick reply.", "spans": [{"start": 14, "end": 27, "type": "PERSON"}]}
+{"text": "Our contact at the vendor is Carlos Rodriguez.", "spans": [{"start": 29, "end": 45, "type": "PERSON"}]}
+{"text": "Olga Petrova approved the budget yesterday.", "spans": [{"start": 0, "end": 12, "type": "PERSON"}]}
+{"text": "I spoke with Kenji Tanaka on the phone this morning.", "spans": [{"start": 13, "end": 25, "type": "PERSON"}]}
+{"text": "The ticket was assigned to Fatima Khan.", "spans": [{"start": 27, "end": 38, "type": "PERSON"}]}
+{"text": "David Miller will present the roadmap on Tuesday.", "spans": [{"start": 0, "end": 12, "type": "PERSON"}]}
+{"text": "Dear Sarah Thompson, your application has been received.", "spans": [{"start": 5, "end": 19, "type": "PERSON"}]}
+{"text": "Lars Nielsen is travelling to the conference next week.", "spans": [{"start": 0, "end": 12, "type": "PERSON"}]}
+{"text": "Please welcome our new designer, Amara Okafor.", "spans": [{"start": 33, "end": 45, "type": "PERSON"}]}
+{"text": "The report was reviewed by Robert Brown before release.", "spans": [{"start": 27, "end": 39, "type": "PERSON"}]}
+{"text": "Elena Rossi asked whether the deadline can move.", "spans": [{"start": 0, "end": 11, "type": "PERSON"}]}
+{"text": "Hi Michael Davis, the files are attached.", "spans": [{"start": 3, "end": 16, "type": "PERSON"}]}
+{"text": "Sofia Almeida manages the Lisbon office.", "spans": [{"start": 0, "end": 13, "type": "PERSON"}]}
+{"text": "The contract was signed by Thomas Wright last week.", "spans": [{"start": 27, "end": 40, "type": "PERSON"}]}
+{"text": "Could you forward this to Hannah Fischer, please?", "spans": [{"start": 26, "end": 40, "type": "PERSON"}]}
+{"text": "James Wilson reported the bug in the login page.", "spans": [{"start": 0, "end": 12, "type": "PERSON"}]}
+{"text": "I met Nina Kowalski at the workshop.", "spans": [{"start": 6, "end": 19, "type": "PERSON"}]}
+{"text": "Regards, Daniel Lee", "spans": [{"start": 9, "end": 19, "type": "PERSON"}]}
+{"text": "Laura Bennett and Omar Farouk co-authored the proposal.", "spans": [{"start": 0, "end": 13, "type": "PERSON"}, {"start": 18, "end": 29, "type": "PERSON"}]}
+{"text": "The patient, Grace Turner, arrived at nine.", "spans": [{"start": 13, "end": 25, "type": "PERSON"}]}
+{"text": "Escalate the issue to Victor Alvarez if it persists.", "spans": [{"start": 22, "end": 36, "type": "PERSON"}]}
+{"text": "Write to john.smith@example.com for details.", "spans": [{"start": 9, "end": 31, "type": "EMAIL_ADDRESS"}]}
+{"text": "My work email is maria.garcia@example.com.", "spans": [{"start": 17, "end": 41, "type": "EMAIL_ADDRESS"}]}
+{"text": "Contact support@example.com if the problem continues.", "spans": [{"start": 8, "end": 27, "type": "EMAIL_ADDRESS"}]}
+{"text": "Send the form to hr-team@example.org today.", "spans": [{"start": 17, "end": 36, "type": "EMAIL_ADDRESS"}]}
+{"text": "Reach her at priya_patel@example.net after lunch.", "spans": [{"start": 13, "end": 36, "type": "EMAIL_ADDRESS"}]}
+{"text": "The newsletter comes from news@example.com.", "spans": [{"start": 26, "end": 42, "type": "EMAIL_ADDRESS"}]}
+{"text": "Reply to w.chen@example.co.uk with the signed copy.", "spans": [{"start": 9, "end": 29, "type": "EMAIL_ADDRESS"}]}
+{"text": "Billing questions go to billing@example.com.", "spans": [{"start": 24, "end": 43, "type": "EMAIL_ADDRESS"}]}
+{"text": "His address is ahmed.hassan+work@example.com for now.", "spans": [{"start": 15, "end": 44, "type": "EMAIL_ADDRESS"}]}
+{"text": "Please CC emily.j@example.org on all replies.", "spans": [{"start": 10, "end": 29, "type": "EMAIL_ADDRESS"}]}
+{"text": "Forward the receipt to accounts@example.net.", "spans": [{"start": 23, "end": 43, "type": "EMAIL_ADDRESS"}]}
+{"text": "Email carlos.r@example.com or olga.p@example.com for access.", "spans": [{"start": 6, "end": 26, "type": "EMAIL_ADDRESS"}, {"start": 30, "end": 48, "type": "EMAIL_ADDRESS"}]}
+{"text": "The alert was sent from noreply@example.com.", "spans": [{"start": 24, "end": 43, "type": "EMAIL_ADDRESS"}]}
+{"text": "Use kenji.tanaka@example.jp for the Tokyo team.", "spans": [{"start": 4, "end": 27, "type": "EMAIL_ADDRESS"}]}
+{"text": "Her login is fatima.khan@example.com and it is active.", "spans": [{"start": 13, "end": 36, "type": "EMAIL_ADDRESS"}]}
+{"text": "Questions? Write to info@example.org.", "spans": [{"start": 20, "end": 36, "type": "EMAIL_ADDRESS"}]}
+{"text": "Send your CV to careers@example.com before the deadline.", "spans": [{"start": 16, "end": 35, "type": "EMAIL_ADDRESS"}]}
+{"text": "Mail david.miller@example.com about the access request.", "spans": [{"start": 5, "end": 29, "type": "EMAIL_ADDRESS"}]}
+{"text": "The sender was s.thompson@example.com.", "spans": [{"start": 15, "end": 37, "type": "EMAIL_ADDRESS"}]}
+{"text": "Add lars.nielsen@example.dk to the distribution list.", "spans": [{"start": 4, "end": 27, "type": "EMAIL_ADDRESS"}]}
+{"text": "Notifications are delivered to alerts@example.com.", "spans": [{"start": 31, "end": 49, "type": "EMAIL_ADDRESS"}]}
+{"text": "Please call me on 212-555-0147 tomorrow.", "spans": [{"start": 18, "end": 30, "type": "PHONE_NUMBER"}]}
+{"text": "Her number is (415) 555-0132.", "spans": [{"start": 14, "end": 28, "type": "PHONE_NUMBER"}]}
+{"text": "Dial +1 202 555 0188 to reach the desk.", "spans": [{"start": 5, "end": 20, "type": "PHONE_NUMBER"}]}
+{"text": "The front office line is 310-555-0119.", "spans": [{"start": 25, "end": 37, "type": "PHONE_NUMBER"}]}
+{"text": "Text me at 646-555-0174 when you arrive.", "spans": [{"start": 11, "end": 23, "type": "PHONE_NUMBER"}]}
+{"text": "Call (718) 555-0163 after five.", "spans": [{"start": 5, "end": 19, "type": "PHONE_NUMBER"}]}
+{"text": "His mobile is +1-305-555-0126.", "spans": [{"start": 14, "end": 29, "type": "PHONE_NUMBER"}]}
+{"text": "For emergencies use 617-555-0155.", "spans": [{"start": 20, "end": 32, "type": "PHONE_NUMBER"}]}
+{"text": "You can reach support on (800) 555-0101.", "spans": [{"start": 25, "end": 39, "type": "PHONE_NUMBER"}]}
+{"text": "The warehouse number is 404-555-0192.", "spans": [{"start": 24, "end": 36, "type": "PHONE_NUMBER"}]}
+{"text": "Phone 512 555 0138 to book an appointment.", "spans": [{"start": 6, "end": 18, "type": "PHONE_NUMBER"}]}
+{"text": "Fax or call (206) 555-0167 during office hours.", "spans": [{"start": 12, "end": 26, "type": "PHONE_NUMBER"}]}
+{"text": "Her direct line: +1 (312) 555-0144.", "spans": [{"start": 17, "end": 34, "type": "PHONE_NUMBER"}]}
+{"text": "Please confirm on 704-555-0183 by noon.", "spans": [{"start": 18, "end": 30, "type": "PHONE_NUMBER"}]}
+{"text": "The helpdesk answers at (503) 555-0129.", "spans": [{"start": 24, "end": 38, "type": "PHONE_NUMBER"}]}
+{"text": "Call the clinic on 213-555-0171 to reschedule.", "spans": [{"start": 19, "end": 31, "type": "PHONE_NUMBER"}]}
+{"text": "Reach the on-call engineer on +1 415 555 0198.", "spans": [{"start": 30, "end": 45, "type": "PHONE_NUMBER"}]}
+{"text": "My landline is (617) 555-0114.", "spans": [{"start": 15, "end": 29, "type": "PHONE_NUMBER"}]}
+{"text": "Leave a message at 919-555-0136.", "spans": [{"start": 19, "end": 31, "type": "PHONE_NUMBER"}]}
+{"text": "Ring 602-555-0185 if the gate is locked.", "spans": [{"start": 5, "end": 17, "type": "PHONE_NUMBER"}]}
+{"text": "The courier will call (213) 555-0159 on arrival.", "spans": [{"start": 22, "end": 36, "type": "PHONE_NUMBER"}]}
+{"text": "Contact Jane Foster at jane.foster@example.com or 212-555-0121.", "spans": [{"start": 8, "end": 19, "type": "PERSON"}, {"start": 23, "end": 46, "type": "EMAIL_ADDRESS"}, {"start": 50, "end": 62, "type": "PHONE_NUMBER"}]}
+{"text": "Mark Evans (mark.evans@example.com) will call you on (646) 555-0140.", "spans": [{"start": 0, "end": 10, "type": "PERSON"}, {"start": 12, "end": 34, "type": "EMAIL_ADDRESS"}, {"start": 53, "end": 67, "type": "PHONE_NUMBER"}]}
+{"text": "Reply to Anna Weber at anna.weber@example.org.", "spans": [{"start": 9, "end": 19, "type": "PERSON"}, {"start": 23, "end": 45, "type": "EMAIL_ADDRESS"}]}
+{"text": "Peter Novak can be reached on 305-555-0177.", "spans": [{"start": 0, "end": 11, "type": "PERSON"}, {"start": 30, "end": 42, "type": "PHONE_NUMBER"}]}
+{"text": "The deployment finished successfully in four minutes.", "spans": []}
+{"text": "Our office is closed on Monday for the public holiday.", "spans": []}
+{"text": "Please review the attached document before the next meeting.", "spans": []}
+{"text": "Version 2.4.1 fixes the crash on startup.", "spans": []}
+{"text": "Apple and Microsoft both released updates this week.", "spans": []}
+{"text": "The order total came to 249 dollars after the discount.", "spans": []}
+{"text": "Tuesday works better than Wednesday for the review.", "spans": []}
+{"text": "The server returned error 503 for three minutes.", "spans": []}
+{"text": "Quarterly revenue grew by twelve percent compared to last year.", "spans": []}
+{"text": "Reference number 20240315 was assigned to the request.", "spans": []}
+{"text": "The conference takes place in Berlin in October.", "spans": []}
+{"text": "Remember to rotate the keys every ninety days.", "spans": []}
+{"text": "Our team uses Python and PostgreSQL for the backend.", "spans": []}
+{"text": "The file report_final_v3.csv was uploaded to the shared folder.", "spans": []}
+{"text": "Thanks for your patience while we investigate.", "spans": []}
+{"text": "The shipment weighs 12 kilograms and arrives in 5 days.", "spans": []}
+{"text": "Open the settings page and choose the Security tab.", "spans": []}
+{"text": "The invoice number is 4471-2203 and is due next month.", "spans": []}
+{"text": "Summer sales begin on the first of December.", "spans": []}

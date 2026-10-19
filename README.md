@@ -240,9 +240,25 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
+## Evaluation
+
+Presidio's detector (the `AnalyzerEngine` the API uses) scored on a hand-written synthetic dataset, using the entities in [`config.demo.yaml`](config/examples/config.demo.yaml). A prediction counts as correct when its type matches and it overlaps a labeled span; see [ADR 0004](docs/adr/0004-span-level-synthetic-eval.md).
+
+| Entity | Labeled spans | False positives | Misses | Precision | Recall | F1 |
+|---|---|---|---|---|---|---|
+| `EMAIL_ADDRESS` | 25 | 0 | 0 | 1.00 | 1.00 | 1.00 |
+| `PERSON` | 31 | 1 | 0 | 0.97 | 1.00 | 0.98 |
+| `PHONE_NUMBER` | 24 | 0 | 0 | 1.00 | 1.00 | 1.00 |
+
+Dataset: 90 sentences ([`eval/dataset.jsonl`](eval/dataset.jsonl)), 19 of them with no personal data. Reproduce with `python -m eval.run_eval`, which rewrites [`eval/results.md`](eval/results.md) (including per-sentence latency, which varies by machine).
+
+**Limitations of this measurement:** synthetic, templated English sentences with fictional data, so real text will score lower; 24–31 examples per type is a small sample, and each type is only just past the ~20 needed to treat a per-type number as more than an anecdote; US-style phone formats only; no names, phones or addresses in NZ formats yet. The dataset was written before the first run and not changed afterwards.
+
+---
+
 ## Limitations
 
-- **Best-effort redaction.** Presidio NLP produces false negatives (missed personal data) and false positives. No accuracy numbers are published yet, so do not rely on it as the only control.
+- **Best-effort redaction.** Presidio NLP produces false negatives (missed personal data) and false positives. The [Evaluation](#evaluation) numbers come from clean synthetic sentences, so they are an optimistic baseline, not a promise for your data. Do not rely on it as the only control.
 - **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
 - **English only.** The NLP path loads English models.
 - **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
