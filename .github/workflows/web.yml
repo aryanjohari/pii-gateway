@@ -28,5 +28,7 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Unit and component tests
+        run: npm test
       - name: Build
         run: npm run build
