@@ -46,6 +46,7 @@ Use the demo policy (no artifact writes):
   - `DISABLE_SCHEDULER=true`
   - `STORAGE_BACKEND=local`
   - `SANITIZE_RATE_LIMIT_PER_MINUTE=30` (or similar)
+  - `TRUSTED_PROXY_HEADER=CF-Connecting-IP` — only with the Cloudflare Tunnel below and `8000` published to localhost, so nothing can reach the app except through Cloudflare. Without it, every visitor shares the tunnel's address and one rate-limit bucket.
   - `SANITIZE_MAX_BODY_BYTES=65536`
   - `SANITIZE_MAX_CHARS=10000`
   - `CORS_ALLOWED_ORIGINS` — optional if all browser traffic goes through the Vercel BFF
