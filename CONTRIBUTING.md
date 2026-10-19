@@ -5,7 +5,7 @@ Thank you for your interest in PII Gateway.
 ## Development
 
 - Python 3.11+
-- Install with dev extras: `pip install -e ".[dev]"`
+- Install with dev extras, using the pinned versions: `pip install -c constraints.txt -e ".[dev]"`
 - Run tests: `pytest`
 - Lint: `ruff check src tests`
 - Typecheck: `mypy src`
@@ -19,6 +19,22 @@ are caught locally instead of in CI. CI itself does not depend on it.
 - Enable it in your clone: `pre-commit install`
 - Run it on everything: `pre-commit run --all-files`
 - Update the pinned ruff version: edit `rev` in `.pre-commit-config.yaml`, matching the ruff version you lint with.
+
+### Updating pinned dependencies
+
+`constraints.txt` fixes the version of every package CI and the Docker image install, so a new
+upstream release cannot break a build unnoticed. It is a pip constraints file: it limits versions
+but does not add packages, so new dependencies still go in `pyproject.toml`.
+
+To refresh it, from a clean Python 3.12 virtual environment:
+
+```
+pip install -e ".[dev]"
+pip freeze --exclude-editable | sort -f > constraints.txt
+```
+
+Then re-add the three header comment lines, run the full test suite, and commit the file on its own.
+The spaCy model (`en_core_web_sm`) is downloaded separately and is not pinned here.
 
 ## Pull requests
 
