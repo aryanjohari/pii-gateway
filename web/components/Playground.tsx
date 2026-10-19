@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { BeforeAfter } from "./BeforeAfter";
+import { LimitsNote } from "./LimitsNote";
 import { PRESETS, type Preset } from "@/lib/presets";
 import { useSanitize, type Mode } from "./useSanitize";
 
@@ -42,22 +43,17 @@ export function Playground() {
 
   return (
     <section id="demo" className="animate-rise scroll-mt-8" style={{ animationDelay: "80ms" }}>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            Live demo
-          </h2>
-          <p className="mt-2 max-w-xl text-muted">
-            Paste sample text or JSON. Declared JSON fields follow policy rules;
-            free-text NLP is best-effort. API keys stay server-side.
-          </p>
-        </div>
-        <p className="text-sm text-muted">Sample data only — not for real PII.</p>
+      <div className="mb-6">
+        <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          Live demo
+        </h2>
+        <p className="mt-2 max-w-xl text-muted">
+          Pick a sample or paste your own text, then see what an AI model would receive
+          instead.
+        </p>
       </div>
-      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-muted">
-        Policy-first demo: not a compliance product. Names in free text may only
-        partially redact. For batch exports, prefer declared field rules over NLP
-        alone.
+      <p className="mb-4 max-w-2xl rounded-xl border border-ink bg-white/80 px-4 py-3 text-sm font-medium text-ink">
+        Sample data only. Do not paste real personal information into this public demo.
       </p>
 
       <form
@@ -152,6 +148,8 @@ export function Playground() {
           </div>
         )}
       </form>
+
+      <LimitsNote />
     </section>
   );
 }
