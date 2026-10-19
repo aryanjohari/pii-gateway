@@ -2,6 +2,7 @@
 
 import json
 import logging
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
@@ -35,20 +36,34 @@ def chat_client(upstream_env: None, client: TestClient) -> TestClient:
     return client
 
 
+Handler = Callable[[httpx.Request], httpx.Response]
+
+
 @pytest.fixture
-def upstream_calls(chat_client: TestClient) -> list[httpx.Request]:
+def install_upstream(chat_client: TestClient) -> Callable[[Handler], list[httpx.Request]]:
     """Replace the lifespan's upstream client with one that records calls, not the network."""
-    calls: list[httpx.Request] = []
 
-    def handler(request: httpx.Request) -> httpx.Response:
-        calls.append(request)
-        return httpx.Response(200, json=UPSTREAM_REPLY)
+    def install(handler: Handler) -> list[httpx.Request]:
+        calls: list[httpx.Request] = []
 
-    state = chat_client.app.state  # type: ignore[attr-defined]
-    state.llm_client = httpx.AsyncClient(
-        transport=httpx.MockTransport(handler), base_url=state.llm_client.base_url
-    )
-    return calls
+        def recording(request: httpx.Request) -> httpx.Response:
+            calls.append(request)
+            return handler(request)
+
+        state = chat_client.app.state  # type: ignore[attr-defined]
+        state.llm_client = httpx.AsyncClient(
+            transport=httpx.MockTransport(recording), base_url=state.llm_client.base_url
+        )
+        return calls
+
+    return install
+
+
+@pytest.fixture
+def upstream_calls(
+    install_upstream: Callable[[Handler], list[httpx.Request]],
+) -> list[httpx.Request]:
+    return install_upstream(lambda request: httpx.Response(200, json=UPSTREAM_REPLY))
 
 
 def test_upstream_receives_only_redacted_text_and_the_callers_key(
@@ -180,3 +195,72 @@ def test_rate_limit_applies_to_the_chat_route(
     assert r.status_code == 429
     assert r.json()["error"]["code"] == "rate_limited"
     assert upstream_calls == []
+
+
+def _post(client: TestClient) -> httpx.Response:
+    return client.post("/v1/chat/completions", headers=HEADERS, json=_payload())
+
+
+def test_upstream_timeout_gives_504_naming_the_upstream(
+    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+) -> None:
+    def slow(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("took too long", request=request)
+
+    calls = install_upstream(slow)
+    r = _post(chat_client)
+    assert r.status_code == 504
+    error = r.json()["error"]
+    assert error["code"] == "upstream_timeout"
+    assert "llm.test" in error["message"]
+    assert len(calls) == 1
+
+
+def test_unreachable_upstream_gives_502(
+    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+) -> None:
+    def refuse(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused", request=request)
+
+    install_upstream(refuse)
+    r = _post(chat_client)
+    assert r.status_code == 502
+    assert r.json()["error"]["code"] == "upstream_unreachable"
+
+
+@pytest.mark.parametrize("upstream_status", [400, 401, 429, 500, 503])
+def test_upstream_errors_keep_their_status_but_not_their_text(
+    chat_client: TestClient,
+    install_upstream: Callable[[Handler], list[httpx.Request]],
+    upstream_status: int,
+) -> None:
+    echoed = {"error": {"message": f"bad prompt from {EMAIL}", "type": "x", "code": "y"}}
+    install_upstream(lambda request: httpx.Response(upstream_status, json=echoed))
+    r = _post(chat_client)
+    assert r.status_code == upstream_status
+    error = r.json()["error"]
+    assert error["code"] == "upstream_error"
+    assert "llm.test" in error["message"]
+    assert str(upstream_status) in error["message"]
+    assert "alice" not in r.text
+
+
+def test_non_json_success_body_gives_502(
+    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+) -> None:
+    install_upstream(lambda request: httpx.Response(200, text="<html>gateway</html>"))
+    r = _post(chat_client)
+    assert r.status_code == 502
+    assert r.json()["error"]["code"] == "upstream_bad_response"
+
+
+def test_upstream_redirect_is_not_followed(
+    chat_client: TestClient, install_upstream: Callable[[Handler], list[httpx.Request]]
+) -> None:
+    calls = install_upstream(
+        lambda request: httpx.Response(302, headers={"Location": "https://elsewhere.test/x"})
+    )
+    r = _post(chat_client)
+    assert r.status_code == 502
+    assert r.json()["error"]["code"] == "upstream_bad_response"
+    assert len(calls) == 1

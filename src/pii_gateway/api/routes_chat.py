@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from pii_gateway.api.auth import verify_http_auth
-from pii_gateway.api.chat_redaction import message_texts, redact_chat_messages
+from pii_gateway.api.chat_redaction import Message, message_texts, redact_chat_messages
 from pii_gateway.api.chat_schemas import ChatCompletionRequest
 from pii_gateway.api.middleware import get_correlation_id
 from pii_gateway.api.rate_limit import client_rate_limit_key
@@ -59,12 +59,34 @@ async def _proxy(request: Request) -> JSONResponse:
     policy = request.app.state.policy
     cid = get_correlation_id(request)
     t0 = time.monotonic()
+    cleaned, summary = _redact(request, chat_request, cid)
+    payload = chat_request.model_copy(update={"messages": cleaned}).model_dump(exclude_unset=True)
+    upstream = await _forward(llm_client, payload, upstream_authorization, cid)
+
+    log_event(
+        logger,
+        logging.INFO,
+        "chat_complete",
+        correlation_id=cid,
+        adapter="openai_chat",
+        config_version=policy.config_version,
+        duration_ms=int((time.monotonic() - t0) * 1000),
+        message_count=len(cleaned),
+        entity_summary=summary,
+        http_status=upstream.status_code,
+    )
+    return _relay(upstream, llm_client.base_url.host)
+
+
+def _redact(
+    request: Request, chat_request: ChatCompletionRequest, cid: str
+) -> tuple[list[Message], dict[str, int]]:
     try:
-        cleaned, summary = redact_chat_messages(
+        return redact_chat_messages(
             chat_request.messages,
             analyzer=request.app.state.analyzer,
             anonymizer=request.app.state.anonymizer,
-            entity_types=policy.redaction_entities,
+            entity_types=request.app.state.policy.redaction_entities,
         )
     except Exception:
         log_event(
@@ -81,24 +103,50 @@ async def _proxy(request: Request) -> JSONResponse:
             "Redaction failed; nothing was forwarded",
         ) from None
 
-    payload = chat_request.model_copy(update={"messages": cleaned}).model_dump(exclude_unset=True)
-    upstream = await llm_client.post(
-        "chat/completions", json=payload, headers={"Authorization": upstream_authorization}
-    )
 
+async def _forward(
+    llm_client: httpx.AsyncClient, payload: dict[str, Any], authorization: str, cid: str
+) -> httpx.Response:
+    """POST to the upstream; transport failures become gateway errors that name only its host."""
+    host = llm_client.base_url.host
+    try:
+        return await llm_client.post(
+            "chat/completions", json=payload, headers={"Authorization": authorization}
+        )
+    except httpx.TimeoutException:
+        code, http_status, message = "upstream_timeout", 504, f"Upstream {host} timed out"
+    except httpx.RequestError:
+        code, http_status, message = "upstream_unreachable", 502, f"Could not reach upstream {host}"
     log_event(
         logger,
-        logging.INFO,
-        "chat_complete",
+        logging.WARNING,
+        "chat_upstream_failed",
         correlation_id=cid,
         adapter="openai_chat",
-        config_version=policy.config_version,
-        duration_ms=int((time.monotonic() - t0) * 1000),
-        message_count=len(cleaned),
-        entity_summary=summary,
-        http_status=upstream.status_code,
+        error_code=code,
+        http_status=http_status,
     )
-    return JSONResponse(status_code=upstream.status_code, content=upstream.json())
+    raise _error(http_status, code, message)
+
+
+def _relay(upstream: httpx.Response, host: str) -> JSONResponse:
+    """Pass success bodies through; replace error bodies, which may echo the prompt."""
+    if upstream.is_success:
+        try:
+            return JSONResponse(status_code=upstream.status_code, content=upstream.json())
+        except ValueError:
+            pass
+    elif upstream.is_client_error or upstream.is_server_error:
+        raise _error(
+            upstream.status_code,
+            "upstream_error",
+            f"Upstream {host} returned status {upstream.status_code}",
+        )
+    raise _error(
+        status.HTTP_502_BAD_GATEWAY,
+        "upstream_bad_response",
+        f"Upstream {host} returned an unusable response (status {upstream.status_code})",
+    )
 
 
 def _parse_request(raw_body: bytes, settings: Settings) -> ChatCompletionRequest:
