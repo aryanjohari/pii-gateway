@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { BeforeAfter } from "./BeforeAfter";
 import { PRESETS, type Preset } from "@/lib/presets";
@@ -16,13 +16,18 @@ export function Playground() {
   const [mode, setMode] = useState<Mode>("text");
   const [text, setText] = useState(PRESETS[0].text);
   const [jsonText, setJsonText] = useState(JSON_SAMPLE);
-  const { state, message, original, output, summary, durationMs, submit, reset } = useSanitize();
+  const { state, problem, submittedMode, original, output, summary, durationMs, submit, reset } =
+    useSanitize();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const canSubmit = useMemo(() => {
-    if (state === "loading") return false;
-    if (mode === "text") return text.trim().length > 0;
-    return jsonText.trim().length > 0;
-  }, [mode, text, jsonText, state]);
+  // Problems the visitor fixes in the box: move focus there so the next step is obvious.
+  const inputProblem =
+    problem?.kind === "empty" || problem?.kind === "too_long" || problem?.kind === "invalid_json";
+  useEffect(() => {
+    if (inputProblem) inputRef.current?.focus();
+  }, [problem, inputProblem]);
+  const showSelfHost =
+    problem?.kind === "too_long" || problem?.kind === "rate_limited" || problem?.kind === "offline";
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -80,6 +85,9 @@ export function Playground() {
             Input
           </span>
           <textarea
+            ref={inputRef}
+            aria-invalid={inputProblem || undefined}
+            aria-describedby={inputProblem ? "sanitize-problem" : undefined}
             value={mode === "text" ? text : jsonText}
             onChange={(e) =>
               mode === "text" ? setText(e.target.value) : setJsonText(e.target.value)
@@ -104,8 +112,10 @@ export function Playground() {
                   : "Nothing was detected."}
               </p>
             )}
-            {(state === "error" || state === "offline") && (
-              <p className={state === "offline" ? "text-accent" : "text-red-800"}>{message}</p>
+            {problem && (
+              <p id="sanitize-problem" className="text-red-800">
+                {problem.message}
+              </p>
             )}
           </div>
 
@@ -113,7 +123,7 @@ export function Playground() {
             <p className="mt-1 text-xs text-muted">{durationMs} ms</p>
           )}
 
-          {state === "offline" && (
+          {showSelfHost && (
             <a
               href="#self-host"
               className="mt-3 inline-block text-sm font-medium text-accent underline-offset-4 hover:underline"
@@ -129,7 +139,7 @@ export function Playground() {
           </p>
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={state === "loading"}
             className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-paper transition enabled:hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
           >
             {state === "loading" ? "Working…" : "Sanitize"}
@@ -138,7 +148,7 @@ export function Playground() {
 
         {state === "success" && (
           <div className="animate-fade">
-            <BeforeAfter mode={mode} original={original} redacted={output} />
+            <BeforeAfter mode={submittedMode} original={original} redacted={output} />
           </div>
         )}
       </form>

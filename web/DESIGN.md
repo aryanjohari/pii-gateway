@@ -37,20 +37,20 @@ Every state has a message and a next step. Messages are text in a live region (`
 | State | Message | Next step offered |
 |---|---|---|
 | Idle | "Pick a sample or paste text, then press Redact." | Presets |
-| Empty input | "Add some text first." Button stays enabled so the message can be read. | Presets |
-| Too long | "That is N characters; the demo accepts up to 10,000." | Shorten, or self-host |
-| Invalid JSON | "That is not valid JSON." Field linked with `aria-describedby`; focus returns to it. | Fix, or use a preset |
+| Empty input | "Add some text first, or pick a sample above." Button stays enabled so the message can be read. Focus moves to the box. | Presets |
+| Too long | "That is N characters; the demo accepts up to 10,000." (client check for text; the gateway's 413 for JSON) | Shorten, or self-host link |
+| Invalid JSON | "That is not valid JSON." or, for a list or single value, "The JSON must be an object…". Field linked with `aria-describedby`; focus returns to it. | Fix, or use a preset |
 | Loading | "Redacting…" | none |
-| Rate limited (429) | "Too many requests from this address. Try again in a minute." | Wait, or self-host |
-| Offline (503, Pi down) | "The public demo is offline. This does not affect self-hosted copies." | Self-host section |
-| Unexpected error | "Something went wrong. No text was stored." Never shows upstream error bodies. | Retry |
+| Rate limited (429) | "Too many requests from this address. Wait a minute and try again, or self-host." | Wait, or self-host link |
+| Offline (503, Pi down) | "The public demo is offline. This does not affect self-hosted copies." | Self-host link |
+| Unexpected error | "Something went wrong. Try again in a moment." Our own wording; upstream error bodies are never shown. | Press Redact again |
 | Success | Both panels plus counts. | Try another preset, or self-host |
 
-The 10,000 limit is `sanitize_max_chars` in `src/pii_gateway/settings.py`. The page reads it from one constant and does not invent a number.
+The 10,000 limit is `sanitize_max_chars` in `src/pii_gateway/settings.py`. The page keeps it in one constant (`web/lib/limits.ts`); the gateway stays the source of truth and answers 413.
 
 ## Accessibility baseline (WCAG 2.2 AA)
 Labelled inputs, results announced, keyboard-only use, visible focus (3:1), text contrast 4.5:1, 24px minimum targets, no horizontal scroll at 375px or 200% zoom, `prefers-reduced-motion` respected.
 
 ## Open questions, to settle before step 6.3
-1. **The public demo policy does not redact NZ identifiers, and `config.nz.yaml` is not a drop-in replacement.** `config/examples/config.demo.yaml` lists only `EMAIL_ADDRESS`, `PERSON` and `PHONE_NUMBER`. `config.nz.yaml` lists only `NZ_NHI`, `NZ_IRD`, `NZ_DRIVER_LICENCE` and `PHONE_NUMBER`, so switching to it would stop redacting names and emails. Decision (owner, 2026-10-20): the demo runs an NZ policy. The demo policy needs all of the entities above, as a change to `config.demo.yaml` or a new file (to be decided, with `/v1/sanitize` eval re-run). The Pi is not touched by this repo's changes.
+1. **The public demo policy does not redact NZ identifiers, and `config.nz.yaml` is not a drop-in replacement.** `config/examples/config.demo.yaml` lists only `EMAIL_ADDRESS`, `PERSON` and `PHONE_NUMBER`. `config.nz.yaml` lists only `NZ_NHI`, `NZ_IRD`, `NZ_DRIVER_LICENCE` and `PHONE_NUMBER`, so switching to it would stop redacting names and emails. Resolved (owner, 2026-10-20): a new file, `config/examples/config.demo-nz.yaml`, with all six entities. `config.demo.yaml` is unchanged so the README evaluation table stays valid. The Pi is not touched by this repo's changes.
 2. **Highlighting the left panel needs offsets.** Checked: `/v1/sanitize` returns `entity_summary` (counts per type) and `duration_ms` only, no offsets. The markers are therefore derived from the placeholders in the redacted text. Changing the API needs separate approval.
