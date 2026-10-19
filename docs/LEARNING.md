@@ -51,3 +51,11 @@ TODO (owner): in your own words,
 3. With `stream: true`, when does redaction happen relative to the first reply byte? What happens to the upstream request if the caller disconnects? [`test_caller_disconnect_closes_the_upstream_request`]
 4. What can a stub-upstream test prove, and what can it not prove about a real provider?
 5. Terms to define in this code's terms: server-sent events, SSRF, fail closed, allow-list.
+
+### Phase 5 Part A: hardening (5.1 to 5.5)
+TODO (owner): in your own words,
+1. Why must `TRUSTED_PROXY_HEADER` be opt-in? What can a caller do if the app trusts the header by default, or if the app is reachable around the proxy? [`test_rate_limit_ignores_proxy_header_by_default`]
+2. What does `constraints.txt` protect against, and what does it not (think of the spaCy model, and a package that is new in `pyproject.toml`)? Why a constraints file over `uv.lock` here?
+3. Why does `web/` have its own workflow with a path filter, and why is `npm run lint` still broken?
+4. What does a pre-commit hook catch that CI also catches, and why have both?
+5. What did the `file_ingest` dedupe change, and which tests would have caught a behaviour change?

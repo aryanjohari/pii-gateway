@@ -93,7 +93,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 - LLM proxy: OpenAI chat-completions format only (streaming relays the reply unscanned); a missed entity reaches the upstream; replies keep placeholders (no restore, to avoid holding a PII map); added latency grows with text length (roughly 12 ms for 80 characters, 54 ms for 800, local stub upstream). Claude and Gemini are reachable only through their OpenAI-compatible endpoints (untested here)
 - NZ identifiers: a mistyped NHI or IRD number fails its check digit and is not redacted; licence numbers match by shape only (precision 0.87 on the sample); postcodes and addresses have no NZ-specific recogniser
 - S3 inbox, S3 outbound writes, live Postgres, and scheduler paths are implemented but less integration-tested than the HTTP sanitize path
-- No multi-key rotation on the HTTP API; rate limiting is per client IP (it keys on the socket address, so it is coarse behind a proxy) and body/character limits are configurable
+- No multi-key rotation on the HTTP API; rate limiting is per client IP (it keys on the socket address, so behind a proxy every client shares one bucket unless `TRUSTED_PROXY_HEADER` names the header the proxy sets; that header is trusted blindly, so set it only when the app cannot be reached around the proxy) and body/character limits are configurable
 - Dockerfile does not download a spaCy model (CI/README do)—verify image startup before assuming a clean `docker compose up`
 - Coverage is gated at 85% (`--cov-fail-under=85` in `pyproject.toml`)
 

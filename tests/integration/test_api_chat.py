@@ -162,6 +162,26 @@ def test_rate_limit_applies_to_the_chat_route(
     assert upstream_calls == []
 
 
+@pytest.fixture
+def trusted_proxy_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Must be requested before ``chat_client``: settings are read when the app is built."""
+    monkeypatch.setenv("SANITIZE_RATE_LIMIT_PER_MINUTE", "1")
+    monkeypatch.setenv("TRUSTED_PROXY_HEADER", "cf-connecting-ip")
+
+
+def test_chat_rate_limit_buckets_per_trusted_proxy_header(
+    trusted_proxy_env: None, chat_client: TestClient, upstream_calls: list[httpx.Request]
+) -> None:
+    def post_as(ip: str) -> int:
+        headers = {**HEADERS, "CF-Connecting-IP": ip}
+        r = chat_client.post("/v1/chat/completions", headers=headers, json=_payload())
+        return r.status_code
+
+    assert post_as("9.9.9.1") == 200
+    assert post_as("9.9.9.1") == 429
+    assert post_as("9.9.9.2") == 200
+
+
 def _post(client: TestClient) -> httpx.Response:
     return client.post("/v1/chat/completions", headers=HEADERS, json=_payload())
 

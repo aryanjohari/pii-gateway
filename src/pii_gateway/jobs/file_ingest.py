@@ -46,10 +46,30 @@ def _log_s3_object_failed(config_version: int, key: str, exc: Exception) -> None
     )
 
 
+async def _sanitize_file(app: FastAPI, path: Path, suffix: str) -> tuple[str, int]:
+    """Read a CSV or JSON-array file and write its sanitized NDJSON; return (artifact id, rows)."""
+    max_bytes = app.state.settings.batch_csv_max_bytes
+    rows: list[dict[str, Any]]
+    if suffix == ".csv":
+        rows = [_normalize_csv_row(row) async for row in iter_csv_rows(path, max_bytes=max_bytes)]
+        source = "batch_csv"
+    else:
+        rows = await load_json_array_objects(path, max_bytes=max_bytes)
+        source = "batch_json"
+    out_id = await write_sanitized_rows_ndjson(
+        app.state.storage,
+        rows=rows,
+        policy=app.state.policy,
+        analyzer=app.state.analyzer,
+        anonymizer=app.state.anonymizer,
+        source=source,
+    )
+    return out_id, len(rows)
+
+
 async def run_file_ingest_job(app: FastAPI) -> None:
     settings = app.state.settings
     policy = app.state.policy
-    storage = app.state.storage
 
     ingest = policy.batch_file_ingest
     if ingest.mode == "local":
@@ -119,39 +139,9 @@ async def run_file_ingest_job(app: FastAPI) -> None:
         ) as tmp:
             tmp.write(data)
             tmp_path = Path(tmp.name)
-        out_id: str = ""
-        row_count = 0
+        suffix = ".csv" if lower.endswith(".csv") else ".json"
         try:
-            if lower.endswith(".csv"):
-                rows_s3: list[dict[str, Any]] = []
-                async for row in iter_csv_rows(
-                    tmp_path,
-                    max_bytes=settings.batch_csv_max_bytes,
-                ):
-                    rows_s3.append(_normalize_csv_row(row))
-                row_count = len(rows_s3)
-                out_id = await write_sanitized_rows_ndjson(
-                    storage,
-                    rows=rows_s3,
-                    policy=policy,
-                    analyzer=app.state.analyzer,
-                    anonymizer=app.state.anonymizer,
-                    source="batch_csv",
-                )
-            else:
-                objs = await load_json_array_objects(
-                    tmp_path,
-                    max_bytes=settings.batch_csv_max_bytes,
-                )
-                row_count = len(objs)
-                out_id = await write_sanitized_rows_ndjson(
-                    storage,
-                    rows=objs,
-                    policy=policy,
-                    analyzer=app.state.analyzer,
-                    anonymizer=app.state.anonymizer,
-                    source="batch_json",
-                )
+            out_id, row_count = await _sanitize_file(app, tmp_path, suffix)
         except (OSError, ValueError) as exc:
             _log_s3_object_failed(policy.config_version, key, exc)
             continue
@@ -174,7 +164,6 @@ async def run_file_ingest_job(app: FastAPI) -> None:
 async def _process_local_inbox(app: FastAPI, inbox_dir: Path) -> None:
     settings = app.state.settings
     policy = app.state.policy
-    storage = app.state.storage
     if not inbox_dir.is_dir():
         return
 
@@ -194,38 +183,8 @@ async def _process_local_inbox(app: FastAPI, inbox_dir: Path) -> None:
         if idx.get(key) == fp:
             continue
 
-        row_count = 0
         try:
-            if lower == ".csv":
-                rows: list[dict[str, Any]] = []
-                async for row in iter_csv_rows(
-                    path,
-                    max_bytes=settings.batch_csv_max_bytes,
-                ):
-                    rows.append(_normalize_csv_row(row))
-                row_count = len(rows)
-                out_id = await write_sanitized_rows_ndjson(
-                    storage,
-                    rows=rows,
-                    policy=policy,
-                    analyzer=app.state.analyzer,
-                    anonymizer=app.state.anonymizer,
-                    source="batch_csv",
-                )
-            else:
-                objs = await load_json_array_objects(
-                    path,
-                    max_bytes=settings.batch_csv_max_bytes,
-                )
-                row_count = len(objs)
-                out_id = await write_sanitized_rows_ndjson(
-                    storage,
-                    rows=objs,
-                    policy=policy,
-                    analyzer=app.state.analyzer,
-                    anonymizer=app.state.anonymizer,
-                    source="batch_json",
-                )
+            out_id, row_count = await _sanitize_file(app, path, lower)
         except (OSError, ValueError) as exc:
             log_event(
                 logger,

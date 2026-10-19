@@ -1,0 +1,30 @@
+name: Web
+
+# Separate from ci.yml so Python-only changes skip it (and web-only changes skip the Python job).
+on:
+  push:
+    branches: [main, master]
+    paths: ["web/**", ".github/workflows/web.yml"]
+  pull_request:
+    branches: [main, master]
+    paths: ["web/**", ".github/workflows/web.yml"]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build

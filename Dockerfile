@@ -5,9 +5,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 RUN useradd --create-home --uid 10001 appuser
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml constraints.txt README.md LICENSE ./
 COPY src ./src
-RUN pip install --no-cache-dir . \
+RUN pip install --no-cache-dir -c constraints.txt . \
     && python -m spacy download en_core_web_sm
 USER appuser
 EXPOSE 8000

@@ -1,6 +1,12 @@
 """Unit tests for in-process rate limiter."""
 
-from pii_gateway.api.rate_limit import client_rate_limit_key, create_sliding_window_limiter
+from starlette.datastructures import Headers
+
+from pii_gateway.api.rate_limit import (
+    client_rate_limit_key,
+    create_sliding_window_limiter,
+    resolve_client_host,
+)
 
 
 def test_limiter_allows_under_cap() -> None:
@@ -33,3 +39,31 @@ def test_limiter_isolates_keys() -> None:
 def test_client_rate_limit_key() -> None:
     assert client_rate_limit_key("1.2.3.4", True) == "1.2.3.4:authed"
     assert client_rate_limit_key(None, False) == "unknown:anon"
+
+
+def test_resolve_client_host_ignores_header_when_setting_empty() -> None:
+    headers = {"CF-Connecting-IP": "9.9.9.9"}
+    assert resolve_client_host("1.2.3.4", headers, "") == "1.2.3.4"
+
+
+def test_resolve_client_host_uses_trusted_header() -> None:
+    headers = {"CF-Connecting-IP": " 9.9.9.9 "}
+    assert resolve_client_host("1.2.3.4", headers, "CF-Connecting-IP") == "9.9.9.9"
+
+
+def test_resolve_client_host_takes_first_entry_of_forwarded_list() -> None:
+    headers = {"X-Forwarded-For": "9.9.9.9, 10.0.0.1"}
+    assert resolve_client_host("1.2.3.4", headers, "X-Forwarded-For") == "9.9.9.9"
+
+
+def test_resolve_client_host_falls_back_when_header_missing_or_blank() -> None:
+    blank = {"CF-Connecting-IP": " "}
+    assert resolve_client_host("1.2.3.4", {}, "CF-Connecting-IP") == "1.2.3.4"
+    assert resolve_client_host("1.2.3.4", blank, "CF-Connecting-IP") == "1.2.3.4"
+    assert resolve_client_host(None, {}, "CF-Connecting-IP") is None
+
+
+def test_resolve_client_host_header_name_is_case_insensitive() -> None:
+    # Starlette's Headers is what requests carry; a plain dict would hide a casing mismatch.
+    headers = Headers({"CF-Connecting-IP": "9.9.9.9"})
+    assert resolve_client_host("1.2.3.4", headers, "cf-connecting-ip") == "9.9.9.9"

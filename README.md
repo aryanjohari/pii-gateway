@@ -127,6 +127,7 @@ uvicorn pii_gateway.main:app --reload
 | `CORS_ALLOWED_ORIGINS` | Comma-separated; empty disables CORS middleware. |
 | `BATCH_DEMO_FIXTURE` | Synthetic Postgres rows without a real DB. |
 | `SANITIZE_RATE_LIMIT_PER_MINUTE` | Per-client IP cap on `/v1/sanitize` (default `60`; `0` disables). |
+| `TRUSTED_PROXY_HEADER` | Header holding the real client IP behind a reverse proxy (e.g. `CF-Connecting-IP`); the rate limit then buckets on it. Default empty = direct client host. Set only if your proxy overwrites that header and the app is unreachable around it, else clients can spoof it. |
 | `SANITIZE_MAX_BODY_BYTES` | Max `Content-Length` for sanitize (default `65536`; `0` disables). |
 | `LLM_UPSTREAM_BASE_URL` | Upstream for `/v1/chat/completions`, including the version prefix (e.g. `https://api.openai.com/v1`). Unset → **503**. Set by the operator only; never read from a request. |
 | `LLM_UPSTREAM_TIMEOUT_SECONDS` | Wait for the upstream before returning **504** (default `60`). |

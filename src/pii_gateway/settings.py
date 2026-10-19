@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     sanitize_rate_limit_per_minute: int = Field(default=60)
     sanitize_max_body_bytes: int = Field(default=65536)
     sanitize_max_chars: int = Field(default=10000)
+    # Header carrying the real client IP behind a reverse proxy; empty = use the direct host
+    trusted_proxy_header: str = Field(default="")
 
     # LLM proxy (POST /v1/chat/completions); the URL comes from env only, never from a request
     llm_upstream_base_url: str | None = Field(default=None)
