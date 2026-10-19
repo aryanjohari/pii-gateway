@@ -40,7 +40,7 @@ Tick what you already have before installing anything:
 
 Use the demo policy (no artifact writes):
 
-- Mount [`config/examples/config.demo.yaml`](../config/examples/config.demo.yaml) as `/etc/pii-gateway/config.yaml`
+- Mount [`config/examples/config.demo-nz.yaml`](../config/examples/config.demo-nz.yaml) as `/etc/pii-gateway/config.yaml`
 - Env (see [`.env.example`](../.env.example)):
   - `SANITIZE_HTTP_API_KEY` — required
   - `DISABLE_SCHEDULER=true`
@@ -65,7 +65,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - ./config/examples/config.demo.yaml:/etc/pii-gateway/config.yaml:ro
+      - ./config/examples/config.demo-nz.yaml:/etc/pii-gateway/config.yaml:ro
     environment:
       DISABLE_SCHEDULER: "true"
       SANITIZE_RATE_LIMIT_PER_MINUTE: "30"
@@ -139,4 +139,4 @@ Then the same against the tunnel URL.
 
 - Web app setup: [`web/README.md`](../web/README.md)
 - Local Compose: root [`README.md`](../README.md)
-- Demo policy: [`config/examples/config.demo.yaml`](../config/examples/config.demo.yaml) — after `git pull`, remount/restart so the container sees the updated file.
+- Demo policy: [`config/examples/config.demo-nz.yaml`](../config/examples/config.demo-nz.yaml) — after `git pull`, remount/restart so the container sees the updated file.

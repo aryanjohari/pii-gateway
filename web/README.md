@@ -28,10 +28,21 @@ Open [http://localhost:3000](http://localhost:3000). If env vars are missing, th
 
 The playground is **policy-first**: declared JSON fields get deterministic placeholders; free-text NLP is best-effort. Sample data only—not a compliance product.
 
+## Checks
+
+```bash
+npm run lint        # ESLint with jsx-a11y
+npm run typecheck
+npm test            # unit and component tests (vitest, Testing Library)
+npm run build && npx playwright install chromium && npm run e2e   # browser flows with axe
+```
+
+Automated accessibility checks find only part of the problems. A clean axe run is not proof of accessibility; a screen-reader pass is still a manual check.
+
 ## Vercel
 
 1. Import this `web/` directory as the project root (or set Root Directory to `web`).
 2. Set secrets: `PII_GATEWAY_API_URL`, `PII_GATEWAY_API_KEY`.
 3. Deploy. When your Raspberry Pi tunnel is ready, update `PII_GATEWAY_API_URL` to the tunnel URL (see [docs/DEPLOY_PI.md](../docs/DEPLOY_PI.md)).
 
-Do not put real PII in the public demo. After pulling gateway policy changes, remount/restart the Pi container with the updated [`config.demo.yaml`](../config/examples/config.demo.yaml).
+Do not put real PII in the public demo. After pulling gateway policy changes, remount/restart the Pi container with the updated [`config.demo-nz.yaml`](../config/examples/config.demo-nz.yaml).

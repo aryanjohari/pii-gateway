@@ -25,3 +25,7 @@ resume.md
 .cursorrules
 architecture.plan.md
 docs/archive/
+
+# Playwright output
+web/test-results/
+web/playwright-report/

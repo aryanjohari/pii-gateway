@@ -24,7 +24,17 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install
         run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Lint
+        run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Unit and component tests
+        run: npm test
       - name: Build
         run: npm run build
+      - name: Install browser for end-to-end tests
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests (includes axe)
+        run: npm run e2e

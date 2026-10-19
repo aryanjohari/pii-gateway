@@ -198,9 +198,9 @@ Success shape:
 | 503 | `misconfigured` | Server key unset/blank |
 | 500 | `internal_error` | Sanitizer failure |
 
-For a public playground or home-lab demo, use [`config/examples/config.demo.yaml`](config/examples/config.demo.yaml) (`write_raw` / `write_cleaned` false), set the rate/size limits above, `DISABLE_SCHEDULER=true`, and put your site origin in `CORS_ALLOWED_ORIGINS` (or call via a server-side BFF). This is **not** a compliance product—do not send real PII to a public demo. Raspberry Pi checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
+For a public playground or home-lab demo, use [`config/examples/config.demo-nz.yaml`](config/examples/config.demo-nz.yaml) (the entities in `config.demo.yaml` plus the NZ identifiers; `write_raw` / `write_cleaned` false), set the rate/size limits above, `DISABLE_SCHEDULER=true`, and put your site origin in `CORS_ALLOWED_ORIGINS` (or call via a server-side BFF). This is **not** a compliance product—do not send real PII to a public demo. Raspberry Pi checklist: [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md).
 
-**After pulling demo policy changes:** remount/restart the Pi (or local Compose) so it picks up the updated `config.demo.yaml`—e.g. `docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --force-recreate` (or restart the gateway service after confirming the volume mount still points at `config/examples/config.demo.yaml`).
+**After pulling demo policy changes:** remount/restart the Pi (or local Compose) so it picks up the updated `config.demo-nz.yaml`—e.g. `docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --force-recreate` (or restart the gateway service after confirming the volume mount still points at `config/examples/config.demo-nz.yaml`).
 
 OpenAPI: `/docs` when the server is running.
 

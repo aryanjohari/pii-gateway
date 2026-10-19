@@ -20,7 +20,13 @@ export function SelfHost() {
         Run the same container locally or on a home lab (including Raspberry Pi
         arm64). Compose is the primary path.
       </p>
-      <pre className="mt-6 overflow-x-auto rounded-2xl border border-line bg-ink p-5 font-mono text-sm leading-relaxed text-paper shadow-soft">
+      <pre
+        // Focusable so keyboard users can scroll a long line sideways (WCAG 2.1.1).
+        tabIndex={0}
+        role="region"
+        aria-label="Self-host commands"
+        className="mt-6 overflow-x-auto rounded-2xl border border-line bg-ink p-5 font-mono text-sm leading-relaxed text-paper shadow-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
         {SNIPPET}
       </pre>
       <div className="mt-6 flex flex-wrap gap-4 text-sm">

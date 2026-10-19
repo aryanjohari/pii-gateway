@@ -6,7 +6,7 @@ services:
   pii-gateway:
     restart: unless-stopped
     volumes:
-      - ./config/examples/config.demo.yaml:/etc/pii-gateway/config.yaml:ro
+      - ./config/examples/config.demo-nz.yaml:/etc/pii-gateway/config.yaml:ro
     environment:
       PII_GATEWAY_CONFIG_PATH: /etc/pii-gateway/config.yaml
       DISABLE_SCHEDULER: "true"
