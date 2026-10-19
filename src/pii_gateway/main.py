@@ -23,15 +23,16 @@ from pii_gateway.storage.outbound_interface import create_outbound_storage, ensu
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    from presidio_analyzer import AnalyzerEngine
     from presidio_anonymizer import AnonymizerEngine
+
+    from pii_gateway.core.analyzer_factory import build_analyzer
 
     setup_logging()
     settings = load_settings()
     ensure_state_dir(settings.gateway_state_dir)
     ensure_state_dir(settings.storage_local_path)
     policy = load_gateway_policy(settings)
-    analyzer = AnalyzerEngine()
+    analyzer = build_analyzer()
     anonymizer = AnonymizerEngine()  # type: ignore[no-untyped-call]
     app.state.settings = settings
     app.state.policy = policy

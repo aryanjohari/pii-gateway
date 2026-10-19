@@ -34,7 +34,7 @@ Research, not legal advice. Access date for all sources: 2026-10-19. Several rul
 **Could be built (ordered by fit):**
 1. **LLM egress proxy**: OpenAI/Anthropic-compatible endpoint that sanitises prompts before forwarding. This matches the OPC's gen-AI guidance most directly and is the easiest to explain.
 2. **Log and analytics scrubbers**: a log-pipeline filter and DB-export job (partly exists).
-3. **Per-purpose policy packs**: NZ-specific entity recognisers (NHI number, IRD number, NZ driver licence, NZ phone and address formats) are not in Presidio by default (interpretation: I did not verify the Presidio recogniser list, so confirm before claiming). This is the clearest differentiator for NZ.
+3. **Per-purpose policy packs**: NZ-specific entity recognisers (NHI number, IRD number, NZ driver licence, NZ phone and address formats) are not in Presidio by default (interpretation: I did not verify the Presidio recogniser list at the time; since verified, see [nz-identifiers.md](nz-identifiers.md) section 4: no NZ recognisers in Presidio 2.2.364). This is the clearest differentiator for NZ.
 4. **Evidence outputs**: a per-request entity-count summary (exists) and a report a business can attach to its PIA.
 
 **Claims to avoid:** "compliant", "anonymised", "guarantees", "removes Privacy Act obligations", "breach-proof".

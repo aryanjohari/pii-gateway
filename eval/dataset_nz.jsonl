@@ -1,0 +1,133 @@
+{"text": "Patient NHI: ZAC5361, admitted via the emergency department.", "spans": [{"start": 13, "end": 20, "type": "NZ_NHI"}]}
+{"text": "Please confirm the NHI number ZAA0067 before booking the scan.", "spans": [{"start": 30, "end": 37, "type": "NZ_NHI"}]}
+{"text": "The referral lists NHI ZAL7848 for the patient.", "spans": [{"start": 23, "end": 30, "type": "NZ_NHI"}]}
+{"text": "Discharge summary for ZAS3128 has been sent to the GP.", "spans": [{"start": 22, "end": 29, "type": "NZ_NHI"}]}
+{"text": "Lab results are attached to record ZAB6427.", "spans": [{"start": 35, "end": 42, "type": "NZ_NHI"}]}
+{"text": "NHI ZCG2436 was merged into the live record last week.", "spans": [{"start": 4, "end": 11, "type": "NZ_NHI"}]}
+{"text": "Could you look up ZRA0154 in the patient system?", "spans": [{"start": 18, "end": 25, "type": "NZ_NHI"}]}
+{"text": "Medication chart for NHI number ZMV0826.", "spans": [{"start": 32, "end": 39, "type": "NZ_NHI"}]}
+{"text": "The clinic recall list includes ZGQ1512 and a note about a missed appointment.", "spans": [{"start": 32, "end": 39, "type": "NZ_NHI"}]}
+{"text": "Reference NHI: ZBS1278", "spans": [{"start": 15, "end": 22, "type": "NZ_NHI"}]}
+{"text": "Our intake form asks for an NHI, for example ZAP0084.", "spans": [{"start": 45, "end": 52, "type": "NZ_NHI"}]}
+{"text": "Transfer the notes for ZMH2742 to the district nurse team.", "spans": [{"start": 23, "end": 30, "type": "NZ_NHI"}]}
+{"text": "Is ZZR2848 the right NHI for this referral?", "spans": [{"start": 3, "end": 10, "type": "NZ_NHI"}]}
+{"text": "Immunisation history for patient ZUU9102 is incomplete.", "spans": [{"start": 33, "end": 40, "type": "NZ_NHI"}]}
+{"text": "New-format NHI ZBN77VL was issued this month.", "spans": [{"start": 15, "end": 22, "type": "NZ_NHI"}]}
+{"text": "The patient's NHI is ZBR08SD.", "spans": [{"start": 21, "end": 28, "type": "NZ_NHI"}]}
+{"text": "Please add ZYL57RC to the ward handover sheet.", "spans": [{"start": 11, "end": 18, "type": "NZ_NHI"}]}
+{"text": "Radiology request for NHI ZHV58UR, left knee.", "spans": [{"start": 26, "end": 33, "type": "NZ_NHI"}]}
+{"text": "Booking confirmed for ZSH36NB on Thursday.", "spans": [{"start": 22, "end": 29, "type": "NZ_NHI"}]}
+{"text": "NHI number ZUZ53ST appears twice in the export.", "spans": [{"start": 11, "end": 18, "type": "NZ_NHI"}]}
+{"text": "Can you verify ZEV55EB against the registration form?", "spans": [{"start": 15, "end": 22, "type": "NZ_NHI"}]}
+{"text": "Allergy alert recorded under ZVH07AS.", "spans": [{"start": 29, "end": 36, "type": "NZ_NHI"}]}
+{"text": "Outpatient letter re: NHI ZDA92LQ.", "spans": [{"start": 26, "end": 33, "type": "NZ_NHI"}]}
+{"text": "The dormant record ZPH76CA was linked to the live one.", "spans": [{"start": 19, "end": 26, "type": "NZ_NHI"}]}
+{"text": "Please quote NHI ZLP25KW on all correspondence.", "spans": [{"start": 17, "end": 24, "type": "NZ_NHI"}]}
+{"text": "Follow-up scheduled for ZCY83ER in six weeks.", "spans": [{"start": 24, "end": 31, "type": "NZ_NHI"}]}
+{"text": "My IRD number is 35901981.", "spans": [{"start": 17, "end": 25, "type": "NZ_IRD"}]}
+{"text": "Please enter your IRD number (49-091-850) on the new starter form.", "spans": [{"start": 30, "end": 40, "type": "NZ_IRD"}]}
+{"text": "IRD 49098576 is registered for GST.", "spans": [{"start": 4, "end": 12, "type": "NZ_IRD"}]}
+{"text": "The employee's IRD number is 136410132.", "spans": [{"start": 29, "end": 38, "type": "NZ_IRD"}]}
+{"text": "IRD number: 180743146", "spans": [{"start": 12, "end": 21, "type": "NZ_IRD"}]}
+{"text": "KiwiSaver contributions were filed under 157808109.", "spans": [{"start": 41, "end": 50, "type": "NZ_IRD"}]}
+{"text": "Payroll record for IRD 152915764 needs correcting.", "spans": [{"start": 23, "end": 32, "type": "NZ_IRD"}]}
+{"text": "Quote 165317823 when you phone Inland Revenue.", "spans": [{"start": 6, "end": 15, "type": "NZ_IRD"}]}
+{"text": "Tax number 150313694 is missing from the contractor file.", "spans": [{"start": 11, "end": 20, "type": "NZ_IRD"}]}
+{"text": "The company's IRD number is 154048944.", "spans": [{"start": 28, "end": 37, "type": "NZ_IRD"}]}
+{"text": "Student loan repayments for 166624975 start in April.", "spans": [{"start": 28, "end": 37, "type": "NZ_IRD"}]}
+{"text": "Please confirm the IRD number 194452136 before we run the pay.", "spans": [{"start": 30, "end": 39, "type": "NZ_IRD"}]}
+{"text": "Our accountant needs the trust's IRD number, 176993804.", "spans": [{"start": 45, "end": 54, "type": "NZ_IRD"}]}
+{"text": "Employee IRD: 181655410", "spans": [{"start": 14, "end": 23, "type": "NZ_IRD"}]}
+{"text": "Enter your IRD number as 168-507-968 on the form.", "spans": [{"start": 25, "end": 36, "type": "NZ_IRD"}]}
+{"text": "Tax file 159 597 857 was updated yesterday.", "spans": [{"start": 9, "end": 20, "type": "NZ_IRD"}]}
+{"text": "The partnership's IRD number is 183-576-496.", "spans": [{"start": 32, "end": 43, "type": "NZ_IRD"}]}
+{"text": "IRD number 176 692 049 is on the employment agreement.", "spans": [{"start": 11, "end": 22, "type": "NZ_IRD"}]}
+{"text": "Withholding tax for IRD 165-982-074 is overdue.", "spans": [{"start": 24, "end": 35, "type": "NZ_IRD"}]}
+{"text": "Contractor IRD 163 087 324 was entered twice.", "spans": [{"start": 15, "end": 26, "type": "NZ_IRD"}]}
+{"text": "Bank account and IRD 169295573 must match the pay slip.", "spans": [{"start": 21, "end": 30, "type": "NZ_IRD"}]}
+{"text": "We hold 187096278 as your IRD number.", "spans": [{"start": 8, "end": 17, "type": "NZ_IRD"}]}
+{"text": "Child support records use IRD number 154862757.", "spans": [{"start": 37, "end": 46, "type": "NZ_IRD"}]}
+{"text": "Her IRD number, 150463637, was read out twice.", "spans": [{"start": 16, "end": 25, "type": "NZ_IRD"}]}
+{"text": "Driver licence number QJ081251 expires in 2028.", "spans": [{"start": 22, "end": 30, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Licence no. ZD835149 was shown at the counter.", "spans": [{"start": 12, "end": 20, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Her NZ driver licence number is FH811200.", "spans": [{"start": 32, "end": 40, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Enter your driver licence number (HL585290) and version number.", "spans": [{"start": 34, "end": 42, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Driver's licence VY500880 has a full class 1.", "spans": [{"start": 17, "end": 25, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "The rental company recorded licence number FD136970.", "spans": [{"start": 43, "end": 51, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "NZTA lookup for licence WW827433 returned no endorsements.", "spans": [{"start": 24, "end": 32, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Please provide the applicant's driver licence KC630578.", "spans": [{"start": 46, "end": 54, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Licence number: JW293748", "spans": [{"start": 16, "end": 24, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "DL number DA857244 appears on the form.", "spans": [{"start": 10, "end": 18, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "His learner licence number is KY307220.", "spans": [{"start": 30, "end": 38, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Driver licence HP319099 was renewed last month.", "spans": [{"start": 15, "end": 23, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "We need a copy of licence CK246875 for the vehicle hire.", "spans": [{"start": 26, "end": 34, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "ID shown at the counter: RU097642", "spans": [{"start": 25, "end": 33, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Identification supplied: MM815693 and a passport.", "spans": [{"start": 25, "end": 33, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "The card XZ190599 was photographed for the file.", "spans": [{"start": 9, "end": 17, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Photo ID AT944139 did not match the booking name.", "spans": [{"start": 9, "end": 17, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Applicant ID QK601650 verified.", "spans": [{"start": 13, "end": 21, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Customer showed CT905632 as proof of age.", "spans": [{"start": 16, "end": 24, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "ID number DW182612 on the front of the card.", "spans": [{"start": 10, "end": 18, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Proof of identity: TV222678", "spans": [{"start": 19, "end": 27, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Staff checked TN224279 against the form.", "spans": [{"start": 14, "end": 22, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Enrolment used ID TA124518.", "spans": [{"start": 18, "end": 26, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "The registration desk noted ZE572861 for the visitor.", "spans": [{"start": 28, "end": 36, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Visitor ID: MP132737", "spans": [{"start": 12, "end": 20, "type": "NZ_DRIVER_LICENCE"}]}
+{"text": "Call the Auckland office on 09 912 4200 during business hours.", "spans": [{"start": 28, "end": 39, "type": "PHONE_NUMBER"}]}
+{"text": "Our landline is (09) 912 4200.", "spans": [{"start": 16, "end": 29, "type": "PHONE_NUMBER"}]}
+{"text": "Fax or ring 09-912-4200 for bookings.", "spans": [{"start": 12, "end": 23, "type": "PHONE_NUMBER"}]}
+{"text": "Reception: 099124200", "spans": [{"start": 11, "end": 20, "type": "PHONE_NUMBER"}]}
+{"text": "From overseas, dial +64 9 912 4200.", "spans": [{"start": 20, "end": 34, "type": "PHONE_NUMBER"}]}
+{"text": "International callers can reach us on +64-9-912-4200.", "spans": [{"start": 38, "end": 52, "type": "PHONE_NUMBER"}]}
+{"text": "Contact number +6499124200 is on the website.", "spans": [{"start": 15, "end": 26, "type": "PHONE_NUMBER"}]}
+{"text": "The Wellington helpdesk number is 04 801 9000.", "spans": [{"start": 34, "end": 45, "type": "PHONE_NUMBER"}]}
+{"text": "Ring head office on (04) 801 9000 and ask for accounts.", "spans": [{"start": 20, "end": 33, "type": "PHONE_NUMBER"}]}
+{"text": "Phone +64 4 801 9000 from outside New Zealand.", "spans": [{"start": 6, "end": 20, "type": "PHONE_NUMBER"}]}
+{"text": "Direct line: 04-801-9000", "spans": [{"start": 13, "end": 24, "type": "PHONE_NUMBER"}]}
+{"text": "After hours please use 048019000.", "spans": [{"start": 23, "end": 32, "type": "PHONE_NUMBER"}]}
+{"text": "Text or call me on 021 987 6543 if you are running late.", "spans": [{"start": 19, "end": 31, "type": "PHONE_NUMBER"}]}
+{"text": "My mobile is 021-987-6543.", "spans": [{"start": 13, "end": 25, "type": "PHONE_NUMBER"}]}
+{"text": "Mobile: 0219876543", "spans": [{"start": 8, "end": 18, "type": "PHONE_NUMBER"}]}
+{"text": "Reach the on-call nurse at +64 21 987 6543.", "spans": [{"start": 27, "end": 42, "type": "PHONE_NUMBER"}]}
+{"text": "WhatsApp me on +64-21-987-6543 tonight.", "spans": [{"start": 15, "end": 30, "type": "PHONE_NUMBER"}]}
+{"text": "Her number is 021 9876543, but she rarely answers.", "spans": [{"start": 14, "end": 25, "type": "PHONE_NUMBER"}]}
+{"text": "Please call 027 456 7890 to arrange delivery.", "spans": [{"start": 12, "end": 24, "type": "PHONE_NUMBER"}]}
+{"text": "Driver's mobile 027-456-7890.", "spans": [{"start": 16, "end": 28, "type": "PHONE_NUMBER"}]}
+{"text": "Customer phone: 0274567890", "spans": [{"start": 16, "end": 26, "type": "PHONE_NUMBER"}]}
+{"text": "Overseas customers should dial +64 27 456 7890.", "spans": [{"start": 31, "end": 46, "type": "PHONE_NUMBER"}]}
+{"text": "Contact on +64274567890 for urgent changes.", "spans": [{"start": 11, "end": 23, "type": "PHONE_NUMBER"}]}
+{"text": "The courier will ring 027 4567890 on arrival.", "spans": [{"start": 22, "end": 33, "type": "PHONE_NUMBER"}]}
+{"text": "Ring 021 987 6543 about the referral for NHI ZYU47XA.", "spans": [{"start": 5, "end": 17, "type": "PHONE_NUMBER"}, {"start": 45, "end": 52, "type": "NZ_NHI"}]}
+{"text": "Payroll query for IRD number 187799961: call 04 801 9000.", "spans": [{"start": 29, "end": 38, "type": "NZ_IRD"}, {"start": 45, "end": 56, "type": "PHONE_NUMBER"}]}
+{"text": "Tax code change for 152182279, contact on 027 456 7890.", "spans": [{"start": 20, "end": 29, "type": "NZ_IRD"}, {"start": 42, "end": 54, "type": "PHONE_NUMBER"}]}
+{"text": "Licence number DT347353 was read out over 09 912 4200.", "spans": [{"start": 15, "end": 23, "type": "NZ_DRIVER_LICENCE"}, {"start": 42, "end": 53, "type": "PHONE_NUMBER"}]}
+{"text": "The import rejected NHI ZCG2433 as invalid.", "spans": []}
+{"text": "A typo turned the NHI into ZRA0153 in the export.", "spans": []}
+{"text": "Record ZMV0823 could not be found in the patient system.", "spans": []}
+{"text": "The nurse wrote ZGQ1513 on the whiteboard but it failed validation.", "spans": []}
+{"text": "Duplicate check flagged NHI ZBS1273.", "spans": []}
+{"text": "Please re-enter NHI ZAP0083, the check digit looks wrong.", "spans": []}
+{"text": "Staff ID ZIB1234 uses the letter I so it cannot be an NHI.", "spans": []}
+{"text": "Ticket ZOA5678 was raised by the helpdesk.", "spans": []}
+{"text": "The short code ZAC536 is missing its check character.", "spans": []}
+{"text": "The upload failed on IRD number 180743147.", "spans": []}
+{"text": "Number 157808100 was typed in the IRD field by mistake.", "spans": []}
+{"text": "IRD entry 152915765 did not pass the check digit test.", "spans": []}
+{"text": "Customer quoted 165317824 but Inland Revenue could not match it.", "spans": []}
+{"text": "Payroll rejected 150313695 as an invalid IRD number.", "spans": []}
+{"text": "The contractor sheet shows IRD 154048945, which looks like a typo.", "spans": []}
+{"text": "The failing example, 136410133, should be rejected.", "spans": []}
+{"text": "Entry 9125568 is below the lowest valid IRD number.", "spans": []}
+{"text": "Number 200001001 is above the current upper limit for IRD numbers.", "spans": []}
+{"text": "Number 200080196 is out of range for an IRD number.", "spans": []}
+{"text": "Order number 133755846 shipped on Monday.", "spans": []}
+{"text": "Invoice reference 198889115 is overdue.", "spans": []}
+{"text": "Case number 105457941 was escalated to a manager.", "spans": []}
+{"text": "Part number HP851871 is out of stock.", "spans": []}
+{"text": "Scan SKU QG104561 at the warehouse door.", "spans": []}
+{"text": "Invoice ref PS317067 relates to the March order.", "spans": []}
+{"text": "Booking code PB342957 confirms the ferry crossing.", "spans": []}
+{"text": "The report was published in 2026 and revised in 2027.", "spans": []}
+{"text": "Send the parcel to postcode 1010 in central Auckland.", "spans": []}
+{"text": "The total came to $1,234.56 including GST.", "spans": []}
+{"text": "ISBN 978-1-991139-62-7 is the online edition.", "spans": []}

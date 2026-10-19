@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from eval.run_eval import format_report, percentile
+from eval.run_eval import DATASET_PATH, RESULTS_PATH, build_command, format_report, percentile
 from eval.scoring import TypeScore
 
 
@@ -25,9 +25,29 @@ def test_report_shows_counts_beside_ratios() -> None:
     report = format_report(
         {"PERSON": score},
         sentence_count=10,
-        policy_path=Path("config.demo.yaml"),
+        command="python -m eval.run_eval --policy config.demo.yaml",
         entities=["PERSON"],
         latencies_ms=[1.0, 2.0, 3.0],
     )
     assert "| PERSON | 5 | 3 | 1 | 2 | 0.75 | 0.60 | 0.67 |" in report
     assert "Sentences: 10" in report
+
+
+def test_default_command_is_unchanged_from_phase_2() -> None:
+    command = build_command(Path("/x/config.demo.yaml"), DATASET_PATH, RESULTS_PATH)
+    assert command == "python -m eval.run_eval --policy config.demo.yaml"
+
+
+def test_command_names_a_custom_dataset_and_output() -> None:
+    dataset = DATASET_PATH.with_name("dataset_nz.jsonl")
+    output = RESULTS_PATH.with_name("results_nz_baseline.md")
+    command = build_command(Path("config.nz.yaml"), dataset, output)
+    assert command == (
+        "python -m eval.run_eval --policy config.nz.yaml"
+        " --dataset eval/dataset_nz.jsonl --output eval/results_nz_baseline.md"
+    )
+
+
+def test_command_accepts_paths_outside_the_repo() -> None:
+    command = build_command(Path("p.yaml"), Path("/tmp/data.jsonl"), RESULTS_PATH)
+    assert command.endswith("--dataset /tmp/data.jsonl")
