@@ -2,7 +2,8 @@
 Structured stdout logging (12-factor).
 
 Allowed log context: event, correlation_id, adapter, config_version, duration_ms,
-row_count, artifact_key (non-sensitive path segments), error_code, http_status.
+row_count, message_count, entity_summary (type -> count), artifact_key (non-sensitive path
+segments), error_code, http_status.
 
 Forbidden: raw HTTP bodies, SQL row payloads, file contents, tokens, passwords.
 """

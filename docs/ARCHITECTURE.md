@@ -9,6 +9,7 @@ PII Gateway is a **single-container** FastAPI service that centralizes personal-
 **Goals**
 
 - One HTTP API (`POST /v1/sanitize`) for live text + nested JSON sanitization
+- An OpenAI-compatible redacting proxy (`POST /v1/chat/completions`) that scrubs message text before it reaches an upstream LLM
 - Reviewable **policy as a file**; **secrets only in env** (12-factor)
 - Optional batch paths (Postgres named SQL, local or S3-compatible file inbox) sharing the same pipeline
 - Optional `raw` / `cleaned` artifact writes to local disk or S3-compatible storage
@@ -17,7 +18,7 @@ PII Gateway is a **single-container** FastAPI service that centralizes personal-
 **Non-goals**
 
 - Not a safe OLTP / generic SQL proxy (batch SQL is named, reviewed, parameterized; use read-only DB roles)
-- Not multi-tenant SaaS, rate limiting, or reversible tokenization
+- Not multi-tenant SaaS or reversible tokenization (a basic per-client-IP rate limit exists; the LLM proxy does not restore originals in replies)
 - Not a packaged threat model or guarantee of zero false positives/negatives
 - English-only Presidio language path today (`language="en"`)
 
@@ -32,6 +33,7 @@ What was designed here (not stock framework defaults):
 5. **Presidio as a lifespan singleton** — `AnalyzerEngine` / `AnonymizerEngine` constructed once (the analyzer through `core/analyzer_factory.build_analyzer()`, which the eval harness also calls) and injected into pure pipeline functions for predictable memory and testability.
 6. **Documented pivot** — Early plans targeted Lambda/DynamoDB multi-tenant SaaS; the shipped design is Docker-first single-tenant OSS. ([ADR 0001](adr/0001-docker-first-over-lambda.md))
 7. **Checksum-validated NZ recognisers** — NHI and IRD numbers are matched by shape and kept only if the issuer's published check digit passes; driver licences have no published checksum and match by shape alone. Registered in the analyzer factory and scored by `eval/`. ([ADR 0005](adr/0005-checksum-validated-nz-recognisers.md))
+8. **Fail-closed LLM proxy** — The chat route accepts only a validated subset of the OpenAI format and rejects everything else with a stable error code, so no unscanned text is forwarded. Message text goes through the format-neutral `core/redact_texts.py`; provider format handling stays in `api/`, so another provider is a new schema plus a walker. The upstream URL is env-only, redirects are not followed, cookies are blocked on the shared client, and upstream error bodies are replaced because they can echo the prompt. Decisions and measurements: [phase 4 plan](plans/phase-4.md), [research](research/llm-api-formats.md).
 
 ## C4 diagrams (canonical)
 
@@ -57,6 +59,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 |-------|------|
 | `main.py` + lifespan | Logging setup, settings, policy load, Presidio engines on `app.state`, storage factory, optional async Postgres engine, optional APScheduler |
 | `POST /v1/sanitize` | Real-time sanitize; `X-API-Key` vs `SANITIZE_HTTP_API_KEY` (missing/blank key → 503) |
+| `POST /v1/chat/completions` | OpenAI-compatible proxy (`api/routes_chat.py`, `chat_schemas.py`, `chat_redaction.py`): validate a supported subset, redact message text with `core/redact_texts.py`, forward the cleaned body and the caller's `Authorization` to `LLM_UPSTREAM_BASE_URL` through one `httpx.AsyncClient` built in the lifespan |
 | `/internal/jobs/*` | One-shot Postgres batch or file ingest; `X-Internal-Job-Key` |
 | `core/sanitize_*` | Free-text Presidio anonymize; recursive structured rules + NLP fallback |
 | `core/analyzer_factory.py` + `core/recognizers/` | Builds the one `AnalyzerEngine` and registers the NZ recognisers (`NZ_NHI`, `NZ_IRD`, `NZ_DRIVER_LICENCE`); checksums are pure functions, the Presidio classes are thin wrappers |
@@ -71,7 +74,8 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 2. **Realtime** — Validate body → auth → analyze/redact text and/or walk `structured` → optional artifact writes → `{ok, correlation_id, result, meta}` with counts-only `entity_summary`.
 3. **Postgres batch** — Load cursor → run named SQL with optional `:since` → sanitize rows → NDJSON artifact → advance cursor (wall-clock `now()` today).
 4. **File ingest** — Scan local inbox or S3 prefix → skip by fingerprint index → parse CSV/JSON array → sanitize → NDJSON → update index.
-5. **Logging** — Structured JSON on stdout; allow-listed fields only (see `logging_config.py` docstring).
+5. **Chat proxy** — Rate limit → gateway key → caller's upstream key → parse and validate against the supported subset (422 with a code otherwise) → redact every text slot once → forward → relay a success body (or, for `stream: true`, the event stream as it arrives), or replace an upstream error with a gateway error. Any failure before the forward means nothing is sent upstream.
+6. **Logging** — Structured JSON on stdout; allow-listed fields only (see `logging_config.py` docstring).
 
 ## Notable implementation details
 
@@ -79,18 +83,19 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 - **Double Presidio analysis** — Counts for `entity_summary` and anonymization each call `analyze` (honest cost/inefficiency).
 - **Batch memory** — Readers can stream/chunk, but jobs currently buffer rows before writing artifacts.
 - **Local vs S3 dedupe** — Local fingerprints use `mtime_ns` + size; S3 path uses **size only** (content-same-size replacement can be skipped).
-- **Auth ordering** — Body validation can return 422 before auth; misconfigured key returns 503 even if a key header is present.
+- **Auth ordering** — On `/v1/sanitize`, body validation can return 422 before auth; misconfigured key returns 503 even if a key header is present. The chat route checks the gateway key and the caller's upstream key before it parses the body.
 - **Event-loop hygiene** — Heavy CSV/JSON/local writes use `asyncio.to_thread` where needed.
 - **Scheduler** — When enabled, file-ingest is always interval-scheduled; Postgres cron only when cron env + policy enabled.
 
 ## Tradeoffs and limitations
 
 - NLP + regex false positives/negatives; policy tuning and human review still matter
+- LLM proxy: OpenAI chat-completions format only (streaming relays the reply unscanned); a missed entity reaches the upstream; replies keep placeholders (no restore, to avoid holding a PII map); added latency grows with text length (roughly 12 ms for 80 characters, 54 ms for 800, local stub upstream). Claude and Gemini are reachable only through their OpenAI-compatible endpoints (untested here)
 - NZ identifiers: a mistyped NHI or IRD number fails its check digit and is not redacted; licence numbers match by shape only (precision 0.87 on the sample); postcodes and addresses have no NZ-specific recogniser
 - S3 inbox, S3 outbound writes, live Postgres, and scheduler paths are implemented but less integration-tested than the HTTP sanitize path
-- No request body size limit, rate limiting, or multi-key rotation on the HTTP API
+- No multi-key rotation on the HTTP API; rate limiting is per client IP (it keys on the socket address, so it is coarse behind a proxy) and body/character limits are configurable
 - Dockerfile does not download a spaCy model (CI/README do)—verify image startup before assuming a clean `docker compose up`
-- Coverage is reported in pytest but not gated (`--cov-fail-under=0`)
+- Coverage is gated at 85% (`--cov-fail-under=85` in `pyproject.toml`)
 
 ## How to verify locally
 

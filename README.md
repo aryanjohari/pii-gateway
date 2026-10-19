@@ -25,6 +25,7 @@ Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that 
 ## Features (verified in this repo)
 
 - `POST /v1/sanitize` — live text and/or nested JSON; `X-API-Key` auth (missing server key → 503)
+- `POST /v1/chat/completions` — OpenAI-compatible proxy: redacts message text, forwards to the upstream LLM you configure (streaming supported; see [LLM proxy](#llm-proxy-openai-compatible))
 - Mounted YAML/JSON **policy**: entity types, per-field rules (`redact` / `tokenize` / `mask` / `passthrough`), persistence flags
 - **Fail-closed structured walk** — undeclared string fields still go through Presidio
 - Optional **Postgres batch** (named SQL from policy only) and **file inbox** (local or S3-compatible)
@@ -127,6 +128,8 @@ uvicorn pii_gateway.main:app --reload
 | `BATCH_DEMO_FIXTURE` | Synthetic Postgres rows without a real DB. |
 | `SANITIZE_RATE_LIMIT_PER_MINUTE` | Per-client IP cap on `/v1/sanitize` (default `60`; `0` disables). |
 | `SANITIZE_MAX_BODY_BYTES` | Max `Content-Length` for sanitize (default `65536`; `0` disables). |
+| `LLM_UPSTREAM_BASE_URL` | Upstream for `/v1/chat/completions`, including the version prefix (e.g. `https://api.openai.com/v1`). Unset → **503**. Set by the operator only; never read from a request. |
+| `LLM_UPSTREAM_TIMEOUT_SECONDS` | Wait for the upstream before returning **504** (default `60`). |
 | `SANITIZE_MAX_CHARS` | Max total string characters in text+structured (default `10000`; `0` disables). |
 
 Example policy shape:
@@ -200,6 +203,66 @@ For a public playground or home-lab demo, use [`config/examples/config.demo.yaml
 
 OpenAPI: `/docs` when the server is running.
 
+### LLM proxy (OpenAI-compatible)
+
+`POST /v1/chat/completions` accepts an OpenAI chat-completions request, replaces personal data in the message text using the same engine and policy as `/v1/sanitize`, forwards the cleaned request to `LLM_UPSTREAM_BASE_URL`, and returns the upstream's reply. A developer changes one base URL and their prompts are scrubbed before they leave your network. It only covers code that calls an API; it does nothing for people typing into a chat website.
+
+Worked example (a clinic's internal tool), run against the gateway with [`config.nz-llm.yaml`](config/examples/config.nz-llm.yaml) and a local stub upstream that replies with exactly the text it received:
+
+```bash
+curl -sS http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <gateway key>" \
+  -H "Authorization: Bearer <your upstream API key>" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Summarise: Patient Jane Smith (NHI ZAC5361) rang from 021 123 4567 about her results."}]}'
+```
+
+```text
+Upstream saw: Summarise: Patient <PERSON> (NHI <NZ_NHI>) rang from <PHONE_NUMBER> about her results.
+```
+
+With the OpenAI Python SDK (tested with `openai` 2.48.0 against the stub upstream), change the base URL and add the gateway key as a header:
+
+```python
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="<your upstream API key>",
+    default_headers={"X-API-Key": "<gateway key>"},
+)
+```
+
+- **Keys.** The gateway checks `X-API-Key` (same key as `/v1/sanitize`). Your upstream key goes in `Authorization` and is forwarded as is; it is never logged or stored. `X-API-Key` is not forwarded. Tools that can only set one key field cannot use this route.
+- **Upstream.** Set `LLM_UPSTREAM_BASE_URL` and `LLM_UPSTREAM_TIMEOUT_SECONDS`. The policy's `redaction_entities` decide what is replaced; `config.nz-llm.yaml` is the NZ pack plus `PERSON`. A policy with an empty `redaction_entities` runs every recogniser.
+- **Redact only.** The reply keeps the placeholders (`<PERSON>`); originals are not restored. No artifacts are written for this route.
+- **Fails closed.** If validation or redaction fails, nothing is forwarded. Upstream error bodies are replaced by a gateway error that names the upstream host and status, because providers can echo the prompt back.
+
+| Status | `error.code` | When |
+|--------|--------------|------|
+| 401 | `unauthorized` / `missing_upstream_key` | Wrong or missing `X-API-Key` / no `Authorization` header |
+| 413 | `payload_too_large` | Body or character budget exceeded (same limits as sanitize) |
+| 422 | `unsupported_content_type`, `unsupported_field`, `invalid_json`, `invalid_request` | Request outside the supported subset |
+| 429 | `rate_limited` | Shares the sanitize rate limit |
+| 500 | `internal_error` | Redaction failed; nothing was forwarded |
+| 502 / 504 | `upstream_unreachable`, `upstream_bad_response` / `upstream_timeout` | Upstream down, unusable reply, or too slow |
+| upstream's status | `upstream_error` | Upstream returned 4xx/5xx |
+| 503 | `misconfigured` | Gateway key or `LLM_UPSTREAM_BASE_URL` unset |
+
+Errors use the OpenAI shape (`{"error": {"message", "type", "param", "code"}}`); the OpenAI Python SDK raised them as typed errors in testing.
+
+**What is and is not scanned.** Scanned: string `content` and `text` parts of `system`, `developer`, `user`, `assistant` and `tool` messages. Everything else is **rejected with a 422, never forwarded unscanned**: image, audio and file parts, `tools`/`functions`/`tool_calls`, `name`, `stop`, `response_format`, `metadata`, `user`, and any other field outside a short allow-list (`model`, `messages`, `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `n`). Identifier-style fields (`model`, a tool message's `tool_call_id`) are forwarded as sent, not scanned.
+
+**Streaming.** `stream: true` is supported (and `stream_options`). The whole request is redacted before anything is sent; the upstream's events are then relayed as they arrive, so the time to the first event includes the redaction time above. Errors before the stream starts use the table above. If the upstream breaks mid-stream, the gateway ends the stream with an error event (`upstream_stream_interrupted`). If the caller disconnects, the upstream request is closed. Tested over real sockets with the OpenAI SDK against a stub upstream: events arrived about when the upstream sent them, and a disconnect reached the upstream. Reply events are not scanned.
+
+**What it cannot do.**
+- A missed entity reaches the LLM. Precision and recall are in [Evaluation](#evaluation) and [NZ identifiers](#nz-identifiers); those numbers come from synthetic sentences. In one probe, the Maori name "Aroha Ngata" was not detected as `PERSON` by the English spaCy model (one example, not a measurement).
+- Multi-turn history is redacted message by message on every request, so a miss in an earlier turn is a miss each time it is replayed.
+- The model's reply can repeat or infer details the placeholders hide; nothing checks the reply.
+- It helps reduce exposure; it does not make output anonymous or compliant with any law.
+
+**Latency added by the gateway** (local stub upstream, 200 sequential requests, macOS arm64): about 12 ms at p50 and p95 for a roughly 80-character message, and about 54 ms (p50) / 56 ms (p95) for roughly 800 characters. Cost grows with text length because the analyzer runs on every message. Model time and network distance are not included. Details and reproduction: [`eval/results_proxy_latency.md`](eval/results_proxy_latency.md), `python -m eval.bench_proxy_latency`.
+
+**Claude and Gemini.** Anthropic and Google each document an OpenAI-compatible endpoint, so pointing `LLM_UPSTREAM_BASE_URL` at them should work, but that is **untested here** and both vendors label these layers a testing aid or beta (some OpenAI fields are ignored). Native Anthropic and Gemini formats are not supported. Sources and gaps: [docs/research/llm-api-formats.md](docs/research/llm-api-formats.md).
+
 ### Batch & storage
 
 - **Postgres:** enable in policy, set `POSTGRES_BATCH_DSN` (read-only), optionally `POSTGRES_BATCH_CRON` or `POST /internal/jobs/postgres-batch`. SQL is **named in the policy only**—not a generic DB proxy.
@@ -218,6 +281,7 @@ Multi-arch GHCR publish: tag a release `v*` (or run **Publish image** workflow) 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | `POST` | `/v1/sanitize` | `X-API-Key` | Real-time sanitization. |
+| `POST` | `/v1/chat/completions` | `X-API-Key` + upstream key in `Authorization` | OpenAI-compatible redacting proxy. |
 | `GET` | `/healthz` | None | Liveness. |
 | `POST` | `/internal/jobs/postgres-batch` | `X-Internal-Job-Key` | Run Postgres batch once. |
 | `POST` | `/internal/jobs/file-ingest` | `X-Internal-Job-Key` | Run file inbox scan once. |
@@ -284,6 +348,7 @@ Dataset: 133 sentences ([`eval/dataset_nz.jsonl`](eval/dataset_nz.jsonl)), 30 of
 - **Not a legal or compliance product.** Redacted output can still identify a person when combined with other data. Using this service does not remove your obligations under privacy law (for example the NZ Privacy Act 2020); it can help reduce exposure as one technical control. See [docs/research/nz-privacy-compliance.md](docs/research/nz-privacy-compliance.md).
 - **English only.** The NLP path loads English models.
 - **NZ identifiers are checked, not looked up.** A mistyped NHI or IRD number fails its check digit and is **not redacted**. Driver licence numbers have no published checksum, so look-alike codes are also redacted (precision 0.87 on the sample). A zero-padded IRD number in prose is not detected. A policy with an empty `redaction_entities` runs every recogniser, including the NZ ones.
+- **LLM proxy is OpenAI-format only.** Images, tools and unknown fields are rejected, replies keep placeholders, and a missed entity reaches the upstream. See [LLM proxy](#llm-proxy-openai-compatible).
 - **Batch exports sit in memory.** Sanitized rows are collected in a list before the NDJSON artifact is written, so very large exports use a lot of memory.
 - **Batch connectors are less tested** than the HTTP path (S3 inbox, scheduler, Postgres job).
 

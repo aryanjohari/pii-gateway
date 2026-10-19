@@ -10,6 +10,7 @@ def test_core_sanitization_modules_avoid_logging() -> None:
         "sanitize_text.py",
         "sanitize_structured.py",
         "sanitize_pipeline.py",
+        "redact_texts.py",
     ):
         text = (root / name).read_text(encoding="utf-8")
         assert "import logging" not in text

@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     sanitize_max_body_bytes: int = Field(default=65536)
     sanitize_max_chars: int = Field(default=10000)
 
+    # LLM proxy (POST /v1/chat/completions); the URL comes from env only, never from a request
+    llm_upstream_base_url: str | None = Field(default=None)
+    llm_upstream_timeout_seconds: float = Field(default=60.0, gt=0)
+
 
 def load_settings() -> Settings:
     return Settings()

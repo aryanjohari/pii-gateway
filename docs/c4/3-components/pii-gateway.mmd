@@ -7,6 +7,9 @@ C4Component
 
   Container_Boundary(gw, "pii-gateway") {
     Component(sanitize_api, "Sanitize API", "api/routes_sanitize.py", "POST /v1/sanitize — realtime text + structured JSON")
+    Component(chat_api, "Chat proxy API", "api/routes_chat.py + chat_schemas + chat_redaction", "POST /v1/chat/completions — validate subset, redact, forward, relay")
+    Component(redactor, "Text redactor", "core/redact_texts.py", "Format-neutral redact_texts(list[str]); counts only")
+    Component(llm_client, "Upstream LLM client", "httpx.AsyncClient in lifespan", "Posts the cleaned request to LLM_UPSTREAM_BASE_URL")
     Component(internal_jobs, "Internal jobs API", "api/routes_internal.py", "POST /internal/jobs/postgres-batch and file-ingest")
     Component(healthz, "Healthz", "main.py", "GET /healthz liveness")
     Component(correlation, "Correlation middleware", "api/middleware.py", "X-Correlation-ID on every request")
@@ -23,6 +26,11 @@ C4Component
 
   Rel(sanitize_api, auth, "verify_http_auth")
   Rel(internal_jobs, auth, "verify_internal_job")
+  Rel(chat_api, auth, "verify_http_auth")
+  Rel(chat_api, redactor, "redact_texts")
+  Rel(redactor, presidio, "analyze / anonymize")
+  Rel(chat_api, llm_client, "Forwards cleaned request")
+  Rel(chat_api, logging, "chat_complete events (counts only)")
   Rel(sanitize_api, pipeline, "sanitize_payload")
   Rel(policy_loader, pipeline, "GatewayPolicy rules")
   Rel(settings_env, policy_loader, "PII_GATEWAY_CONFIG_PATH")
@@ -39,6 +47,7 @@ C4Component
 %% flowchart TB
 %%   subgraph api["HTTP surface"]
 %%     sanitize_api[Sanitize API]
+%%     chat_api[Chat proxy API]
 %%     internal_jobs[Internal jobs API]
 %%     healthz[Healthz]
 %%     correlation[Correlation middleware]
@@ -57,6 +66,9 @@ C4Component
 %%   storage_state[Storage + state]
 %%   logging[Structured logging]
 %%   sanitize_api --> auth --> pipeline
+%%   chat_api --> auth
+%%   chat_api --> redactor[Text redactor] --> presidio
+%%   chat_api --> llm_client[Upstream LLM client]
 %%   internal_jobs --> auth
 %%   internal_jobs --> jobs_sched
 %%   settings_env --> policy_loader --> pipeline
