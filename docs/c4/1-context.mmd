@@ -13,6 +13,7 @@ C4Context
 
   System_Ext(postgres, "PostgreSQL", "Optional read-only exports via named SQL in policy")
   System_Ext(s3, "S3-compatible storage", "Optional file inbox and/or outbound artifacts (MinIO, R2, AWS S3)")
+  System_Ext(llm, "Upstream LLM API", "Operator-configured OpenAI-compatible endpoint that receives redacted chat requests")
   System_Ext(disk, "Local volume", "Default artifact root and gateway state (cursors, processed-file index)")
 
   Rel(integrator, gw, "Sends text/JSON to sanitize", "POST /v1/sanitize + X-API-Key")
@@ -20,6 +21,8 @@ C4Context
   Rel(operator, gw, "Deploys container; mounts policy; configures env")
   Rel(gw, postgres, "Optional named SQL batch reads")
   Rel(gw, s3, "Optional inbox list/get and artifact put")
+  Rel(integrator, gw, "Sends chat requests to proxy", "POST /v1/chat/completions + X-API-Key")
+  Rel(gw, llm, "Forwards redacted chat requests", "HTTPS + caller Authorization")
   Rel(gw, disk, "Optional raw/cleaned writes; state JSON")
 
 %% --- Flowchart equivalent (uncomment if C4Context unsupported) ---
@@ -31,6 +34,8 @@ C4Context
 %%   postgres[(PostgreSQL)]
 %%   s3[(S3-compatible)]
 %%   disk[(Local volume)]
+%%   llm[Upstream LLM API]
+%%   gw -->|redacted chat request| llm
 %%   integrator -->|POST /v1/sanitize| gw
 %%   automator -->|POST /internal/jobs/*| gw
 %%   operator -->|deploy + policy + env| gw

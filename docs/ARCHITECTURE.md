@@ -57,6 +57,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 |-------|------|
 | `main.py` + lifespan | Logging setup, settings, policy load, Presidio engines on `app.state`, storage factory, optional async Postgres engine, optional APScheduler |
 | `POST /v1/sanitize` | Real-time sanitize; `X-API-Key` vs `SANITIZE_HTTP_API_KEY` (missing/blank key → 503) |
+| `POST /v1/chat/completions` | OpenAI-compatible proxy (`api/routes_chat.py`, `chat_schemas.py`, `chat_redaction.py`): validate a supported subset, redact message text with `core/redact_texts.py`, forward the cleaned body and the caller's `Authorization` to `LLM_UPSTREAM_BASE_URL` through one `httpx.AsyncClient` built in the lifespan |
 | `/internal/jobs/*` | One-shot Postgres batch or file ingest; `X-Internal-Job-Key` |
 | `core/sanitize_*` | Free-text Presidio anonymize; recursive structured rules + NLP fallback |
 | `core/analyzer_factory.py` + `core/recognizers/` | Builds the one `AnalyzerEngine` and registers the NZ recognisers (`NZ_NHI`, `NZ_IRD`, `NZ_DRIVER_LICENCE`); checksums are pure functions, the Presidio classes are thin wrappers |
@@ -71,7 +72,8 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 2. **Realtime** — Validate body → auth → analyze/redact text and/or walk `structured` → optional artifact writes → `{ok, correlation_id, result, meta}` with counts-only `entity_summary`.
 3. **Postgres batch** — Load cursor → run named SQL with optional `:since` → sanitize rows → NDJSON artifact → advance cursor (wall-clock `now()` today).
 4. **File ingest** — Scan local inbox or S3 prefix → skip by fingerprint index → parse CSV/JSON array → sanitize → NDJSON → update index.
-5. **Logging** — Structured JSON on stdout; allow-listed fields only (see `logging_config.py` docstring).
+5. **Chat proxy** — Rate limit → gateway key → caller's upstream key → parse and validate against the supported subset (422 with a code otherwise) → redact every text slot once → forward → relay a success body, or replace an upstream error with a gateway error. Any failure before the forward means nothing is sent upstream.
+6. **Logging** — Structured JSON on stdout; allow-listed fields only (see `logging_config.py` docstring).
 
 ## Notable implementation details
 
@@ -86,6 +88,7 @@ Single FastAPI container; optional PostgreSQL and S3-compatible storage; policy 
 ## Tradeoffs and limitations
 
 - NLP + regex false positives/negatives; policy tuning and human review still matter
+- LLM proxy: OpenAI chat-completions format only, non-streaming; a missed entity reaches the upstream; replies keep placeholders (no restore, to avoid holding a PII map); added latency grows with text length (roughly 12 ms for 80 characters, 54 ms for 800, local stub upstream). Claude and Gemini are reachable only through their OpenAI-compatible endpoints (untested here)
 - NZ identifiers: a mistyped NHI or IRD number fails its check digit and is not redacted; licence numbers match by shape only (precision 0.87 on the sample); postcodes and addresses have no NZ-specific recogniser
 - S3 inbox, S3 outbound writes, live Postgres, and scheduler paths are implemented but less integration-tested than the HTTP sanitize path
 - No request body size limit, rate limiting, or multi-key rotation on the HTTP API

@@ -101,6 +101,13 @@ Required: `id`, `choices`, `created`, `model`, `object` (`"chat.completion"`). O
 7. Exact URL-joining logic in the SDK (trailing-slash handling in `base_url`). I verified the default and the README example only, not the join code.
 8. Whether `platform.openai.com/docs/api-reference/chat/create` (the human-readable reference) differs from the OpenAPI file. Blocked by 403; not checked. The spec says it is generated from OpenAI's upstream source [S1].
 
+## 6b. Resolved by testing in step 4.7
+On 2026-10-19 the `openai` Python SDK 2.48.0 was pointed at the gateway (local stub upstream):
+- Unknown 2 (SDK behaviour on error bodies): gateway errors in the OpenAI shape were raised as typed `APIStatusError` / `AuthenticationError` with the gateway's `code` and `message` intact.
+- Unknown 7 (URL joining): `base_url="http://host:port/v1"` (no trailing slash) reached `POST /v1/chat/completions`.
+- A custom `X-API-Key` header set through `default_headers` reached the gateway, which settles the auth recommendation in section 5 for the Python SDK.
+Still untested: the Node SDK, any real OpenAI/Claude/Gemini endpoint, and unknowns 1, 3, 4, 5, 6 and 8.
+
 ## 7. Anthropic and Gemini (step 4.0b)
 Why: the owner uses Claude and Gemini, so an OpenAI-only proxy would not serve the actual use case. Same method as above: vendor docs plus Google's machine-readable discovery document [S9]. No live calls were made (no API keys), so everything below is from documentation, not tested behaviour.
 

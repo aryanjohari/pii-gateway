@@ -6,7 +6,7 @@
 
 | Label | Role | Evidence |
 |-------|------|----------|
-| App integrator | Calls realtime sanitize | `api/routes_sanitize.py` — `POST /v1/sanitize`, `X-API-Key` |
+| App integrator | Calls realtime sanitize or the chat proxy | `api/routes_sanitize.py` — `POST /v1/sanitize`; `api/routes_chat.py` — `POST /v1/chat/completions`; `X-API-Key` |
 | Automation caller | Triggers jobs or relies on scheduler | `api/routes_internal.py`; `jobs/scheduler.py` |
 | Operator | Compose, policy mount, env secrets | `docker-compose.yml`, `settings.py`, `PII_GATEWAY_CONFIG_PATH` |
 
@@ -16,6 +16,7 @@
 |-------|------|----------|
 | PostgreSQL | Named, parameterized batch SQL from policy | `connectors/batch_postgres_sqlalchemy.py`, `POSTGRES_BATCH_DSN` |
 | S3-compatible storage | Inbox objects and/or outbound artifacts | `connectors/s3_inbox.py`, `storage/s3_compatible_backend.py` |
+| Upstream LLM API | Receives chat requests after redaction (operator-configured, e.g. OpenAI) | `api/routes_chat.py`, `LLM_UPSTREAM_BASE_URL` |
 | Local volume | Default outbound + `GATEWAY_STATE_DIR` | `storage/local_volume_backend.py`, `state_store.py` |
 
 **Notes**

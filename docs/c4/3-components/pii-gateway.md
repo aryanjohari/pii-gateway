@@ -5,6 +5,9 @@ Zoom of the single FastAPI / Uvicorn process (`Dockerfile` CMD). All components 
 | ID | Code area | Role |
 |----|-----------|------|
 | Sanitize API | `api/routes_sanitize.py`, `api/schemas.py` | `POST /v1/sanitize` |
+| Chat proxy API | `api/routes_chat.py`, `api/chat_schemas.py`, `api/chat_redaction.py` | `POST /v1/chat/completions`: validate a supported subset, redact, forward, relay |
+| Text redactor | `core/redact_texts.py` | Format-neutral `redact_texts(list[str])`; no provider types, no logging |
+| Upstream LLM client | `main.py` lifespan | One `httpx.AsyncClient` for `LLM_UPSTREAM_BASE_URL`; closed on shutdown |
 | Internal jobs API | `api/routes_internal.py` | `POST /internal/jobs/postgres-batch`, `POST /internal/jobs/file-ingest` |
 | Healthz | `main.py` | `GET /healthz` |
 | Correlation middleware | `api/middleware.py` | `X-Correlation-ID` (only Starlette middleware besides optional CORS) |
@@ -26,5 +29,6 @@ Zoom of the single FastAPI / Uvicorn process (`Dockerfile` CMD). All components 
 4. **Double analyze cost** — Pipeline may call Presidio `analyze` for counts and again inside anonymize paths (honest inefficiency noted in `ARCHITECTURE.md`).
 5. **Scheduler behavior** — When enabled, file-ingest interval job is always registered; Postgres cron job only if `POSTGRES_BATCH_CRON` and `postgres_batch.enabled` (`jobs/scheduler.py`).
 6. **Placeholders match Presidio** — `redact` / `tokenize` use `<ENTITY_TYPE>` (field→entity map or uppercased field name); `tokenize` is not cryptographic.
+7. **Fail-closed proxy** — Anything outside the supported chat subset is rejected rather than forwarded unscanned; upstream error bodies are replaced because they can echo the prompt (`routes_chat.py`).
 
 Parent view: [../2-containers.md](../2-containers.md). Diagram: [pii-gateway.mmd](pii-gateway.mmd).
