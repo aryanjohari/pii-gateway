@@ -1,6 +1,6 @@
 # PII Gateway: repo rules for Claude
 
-Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.md`. Design: `docs/ARCHITECTURE.md`. Current work plan: `docs/plans/phase-0-1.md`.
+Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.md`. Design: `docs/ARCHITECTURE.md`. Current work plan: `docs/plans/phase-4.md`.
 
 ## Commands
 - Install: `pip install -e ".[dev]"` then `python -m spacy download en_core_web_sm`
@@ -11,14 +11,14 @@ Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.
 
 ## Layout
 - `src/pii_gateway/core/`: pure redaction logic. Must not import `api`, `connectors`, `jobs` or `storage`, and must not log.
-- `api/`: FastAPI routes, auth, rate limit, request limits.
+- `api/`: FastAPI routes, auth, rate limit, request limits, and the LLM chat proxy (`routes_chat.py`, `chat_schemas.py`, `chat_redaction.py`, `chat_stream.py`). Provider-format code stays here; `core/redact_texts.py` is format-neutral.
 - `jobs/`, `connectors/`, `storage/`: batch and file ingestion, Postgres/S3/CSV/JSON I/O, artifact backends.
 - `tests/unit` for pure logic, `tests/integration` for HTTP and job flows.
 
 ## Code rules
 - Functional style. No classes unless a library requires them (Pydantic models and settings are fine).
 - Strict type hints on all parameters and returns. Pydantic v2 models for request/response schemas, no raw dicts for validation.
-- `async def` for I/O (HTTP, DB, object storage). Use `aioboto3` for S3.
+- `async def` for I/O (HTTP, DB, object storage). Use `aioboto3` for S3 and one shared `httpx.AsyncClient` (`llm_client.py`) for the LLM upstream.
 - Guard clauses over nested `if`. API errors use `HTTPException` with clear codes.
 - Presidio `AnalyzerEngine` is built once per process in the FastAPI lifespan. Never per request.
 - 12-factor: config from environment (`settings.py`, `.env.example` is the committed example), logs to stdout, processes stateless. Storage is local disk or an S3-compatible endpoint; never assume AWS-only.
@@ -27,6 +27,7 @@ Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.
 ## Security rules (non-negotiable)
 - Never log raw request bodies, SQL row payloads, file contents, or any text that may contain PII. Exceptions and log lines carry identifiers (job name, key, file name), not data.
 - Batch SQL must be reviewed, parameterized and read-only.
+- LLM proxy: forward only what was validated and redacted. Unknown or unscanned request fields are rejected, never passed through. The upstream URL comes from env only. Upstream error bodies are never relayed (they can echo the prompt). The caller's upstream key is forwarded and never logged or stored.
 - Do not claim the product is "compliant" or that output is "anonymised". It is best-effort redaction.
 
 ## Testing rules
@@ -39,4 +40,4 @@ Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.
 - Never tag, push, or trigger the publish workflow (`v*` tags publish an image to GHCR) without explicit approval for that action.
 - Never rewrite git history without explicit approval.
 - Local-only files (untracked, kept on disk, listed in `.gitignore`): `resume.md`, `.cursorrules`, `architecture.plan.md`, `docs/archive/`. Treat as read-only unless asked.
-- Out of scope until planned: NZ postcode and address recognisers, LLM proxy, rate-limit proxy-IP fix, pre-commit, dependency lockfile.
+- Out of scope until planned: NZ postcode and address recognisers, native Anthropic and Gemini formats (Phase 5), restoring originals in LLM replies, rate-limit proxy-IP fix, pre-commit, dependency lockfile.
