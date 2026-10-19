@@ -21,6 +21,11 @@ def test_specification_example_with_the_wrong_check_digit_is_invalid() -> None:
     assert not ird_is_valid("136410133")
 
 
+def test_zero_padded_nine_digit_form_used_in_ird_files_is_valid() -> None:
+    # The IRD file specification pads an 8-digit number with a zero; its own sample is 010000289.
+    assert ird_is_valid("010000289")
+
+
 def test_number_below_the_lowest_valid_ird_number_is_invalid() -> None:
     assert not ird_is_valid("9125568")  # spec example 6
     assert ird_is_valid("10000009")
@@ -86,3 +91,19 @@ def test_recogniser_ignores_digits_inside_longer_numbers(text: str) -> None:
 
 def test_recogniser_does_not_treat_a_grouped_phone_prefix_as_an_ird_number() -> None:
     assert _find("Call 027 456 7890 or 021 987 6543") == []
+
+
+@pytest.mark.parametrize("text", ["Call 099124008 now", "mobile 021 987 005", "ring 021987018"])
+def test_recogniser_ignores_phone_shaped_digit_runs_even_when_the_check_digit_passes(
+    text: str,
+) -> None:
+    # Each of these passes ird_is_valid by chance (about 1 in 10 landline-shaped strings does).
+    digits = "".join(c for c in text if c.isdigit())
+    assert ird_is_valid(digits)
+    assert _find(text) == []
+
+
+def test_recogniser_skips_the_zero_padded_form_even_though_it_is_a_valid_ird_number() -> None:
+    # Trade-off recorded in ADR 0005: padded numbers come from IRD file uploads, not prose.
+    assert ird_is_valid("049091850")
+    assert _find("IRD 049091850") == []

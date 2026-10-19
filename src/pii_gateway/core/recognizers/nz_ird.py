@@ -20,6 +20,9 @@ _LOWEST_IRD_NUMBER = 10_000_000
 _HIGHEST_IRD_NUMBER = 200_000_000
 _SEPARATORS = re.compile(r"[- ]")
 _NOT_EMBEDDED = r"(?<![0-9]){body}(?![0-9])"
+# The patterns never start with 0. IRD's file format pads an 8-digit number with a leading zero
+# (`ird_is_valid` accepts that), but in free text a leading zero is far more likely a phone
+# number such as 099124200, and about 1 in 10 of those would pass the check by chance.
 # Scores are low because 8-9 digit numbers are common; the check digit does the real filtering.
 _PLAIN_SCORE = 0.3
 _GROUPED_SCORE = 0.5
@@ -55,11 +58,15 @@ class NzIrdRecognizer(PatternRecognizer):
             patterns=[
                 Pattern(
                     "ird_grouped",
-                    _NOT_EMBEDDED.format(body="[0-9]{2,3}[- ][0-9]{3}[- ][0-9]{3}"),
+                    _NOT_EMBEDDED.format(body="[1-9][0-9]{1,2}[- ][0-9]{3}[- ][0-9]{3}"),
                     _GROUPED_SCORE,
                 ),
-                Pattern("ird_nine_digits", _NOT_EMBEDDED.format(body="[0-9]{9}"), _PLAIN_SCORE),
-                Pattern("ird_eight_digits", _NOT_EMBEDDED.format(body="[0-9]{8}"), _PLAIN_SCORE),
+                Pattern(
+                    "ird_nine_digits", _NOT_EMBEDDED.format(body="[1-9][0-9]{8}"), _PLAIN_SCORE
+                ),
+                Pattern(
+                    "ird_eight_digits", _NOT_EMBEDDED.format(body="[1-9][0-9]{7}"), _PLAIN_SCORE
+                ),
             ],
             context=_CONTEXT_WORDS,
             supported_language="en",
