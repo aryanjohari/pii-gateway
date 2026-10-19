@@ -1,5 +1,7 @@
 """Unit tests for in-process rate limiter."""
 
+from starlette.datastructures import Headers
+
 from pii_gateway.api.rate_limit import (
     client_rate_limit_key,
     create_sliding_window_limiter,
@@ -59,3 +61,9 @@ def test_resolve_client_host_falls_back_when_header_missing_or_blank() -> None:
     assert resolve_client_host("1.2.3.4", {}, "CF-Connecting-IP") == "1.2.3.4"
     assert resolve_client_host("1.2.3.4", blank, "CF-Connecting-IP") == "1.2.3.4"
     assert resolve_client_host(None, {}, "CF-Connecting-IP") is None
+
+
+def test_resolve_client_host_header_name_is_case_insensitive() -> None:
+    # Starlette's Headers is what requests carry; a plain dict would hide a casing mismatch.
+    headers = Headers({"CF-Connecting-IP": "9.9.9.9"})
+    assert resolve_client_host("1.2.3.4", headers, "cf-connecting-ip") == "9.9.9.9"
