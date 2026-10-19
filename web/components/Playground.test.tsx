@@ -111,4 +111,62 @@ describe("Playground", () => {
     await expectStatus("10,001 characters");
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("rejects valid JSON that is not an object, without sending it", async () => {
+    const fetchMock = mockFetch(200, {});
+    render(<Playground />);
+
+    await userEvent.click(screen.getByRole("button", { name: "JSON" }));
+    await userEvent.clear(input());
+    await userEvent.click(input());
+    await userEvent.paste("[1, 2]");
+    await userEvent.click(submitButton());
+
+    await expectStatus("must be an object");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("shows our generic message for a 500 with a non-JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("upstream said: secret@example.com", { status: 500 })),
+    );
+    render(<Playground />);
+
+    await userEvent.click(submitButton());
+
+    await expectStatus("Something went wrong");
+    expect(screen.getByRole("status").textContent).not.toContain("secret@example.com");
+  });
+
+  it("maps a server 413 to the too-long message", async () => {
+    mockFetch(413, { ok: false, error: { code: "payload_too_large", message: "server wording" } });
+    render(<Playground />);
+
+    await userEvent.click(submitButton());
+
+    await expectStatus("10,000 character limit");
+    expect(screen.getByRole("status").textContent).not.toContain("server wording");
+  });
+
+  it("shows JSON output without markers and keeps it when the toggle changes", async () => {
+    mockFetch(200, {
+      ok: true,
+      result: { structured: { email: "<EMAIL_ADDRESS>" } },
+      meta: { entity_summary: { EMAIL_ADDRESS: 1 }, duration_ms: 3 },
+    });
+    render(<Playground />);
+
+    await userEvent.click(screen.getByRole("button", { name: "JSON" }));
+    await userEvent.click(submitButton());
+    await expectStatus("Removed EMAIL_ADDRESS: 1");
+
+    expect(document.querySelector("mark")).toBeNull();
+    expect(screen.getByText(/"email": "<EMAIL_ADDRESS>"/)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Text" }));
+    expect(screen.getByText(/"email": "<EMAIL_ADDRESS>"/)).toBeTruthy();
+    expect(document.querySelector("mark")).toBeNull();
+  });
 });
+

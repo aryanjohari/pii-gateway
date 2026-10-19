@@ -27,6 +27,11 @@ describe("parseSanitizeResponse", () => {
     });
   });
 
+  it("ignores a result text of the wrong type", () => {
+    const parsed = parseSanitizeResponse({ ok: true, result: { text: 5 } });
+    expect(parsed).toMatchObject({ kind: "ok", value: { text: undefined } });
+  });
+
   it.each([null, "text", { detail: { code: "x" } }, { ok: true }])(
     "treats %j as unknown",
     (body) => {
