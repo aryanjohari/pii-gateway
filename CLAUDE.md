@@ -3,7 +3,7 @@
 Overrides `~/.claude/CLAUDE.md` where they conflict. Product overview: `PROJECT.md`. Design: `docs/ARCHITECTURE.md`. Current work plan: `docs/plans/phase-4.md`.
 
 ## Commands
-- Install: `pip install -e ".[dev]"` then `python -m spacy download en_core_web_sm`
+- Install: `pip install -e ".[dev]"` then `python -m spacy download en_core_web_lg`
 - Test: `pytest` (coverage is printed; the floor is set in `pyproject.toml`)
 - Lint: `ruff check src tests`
 - Types: `mypy src` (strict)

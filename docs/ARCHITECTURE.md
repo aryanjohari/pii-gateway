@@ -104,7 +104,7 @@ See [README.md](../README.md) for Compose quickstart, env/policy, and maintainer
 
 ```bash
 docker compose up --build
-# or: pip install -e ".[dev]" && python -m spacy download en_core_web_sm && pytest
+# or: pip install -e ".[dev]" && python -m spacy download en_core_web_lg && pytest
 ```
 
 Visitor-facing copy: [`portfolio.yaml`](../portfolio.yaml). Narrative overview: [`PROJECT.md`](../PROJECT.md).

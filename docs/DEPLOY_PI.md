@@ -25,7 +25,7 @@ Tick what you already have before installing anything:
 
 | Need | Why |
 |------|-----|
-| Pi 4/5, 4 GB+ RAM | AnalyzerEngine + `en_core_web_sm` are memory-heavy |
+| Pi 4/5, 4 GB+ RAM | AnalyzerEngine + `en_core_web_lg` are memory-heavy (the model alone peaked at 430 to 800 MB on a laptop) |
 | `aarch64` | Publish/pull `linux/arm64` images (see GHCR notes in README) |
 | Disk headroom | Slim Python image + spaCy model + logs |
 | Docker + Compose v2 | Same primary path as local/dev |

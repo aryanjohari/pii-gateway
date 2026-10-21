@@ -1,12 +1,17 @@
 import pytest
 from presidio_analyzer import AnalyzerEngine
 
-from pii_gateway.core.analyzer_factory import build_analyzer
+from pii_gateway.core.analyzer_factory import SPACY_MODEL, build_analyzer
 
 
 @pytest.fixture(scope="module")
 def analyzer() -> AnalyzerEngine:
     return build_analyzer()  # loading the NLP model takes seconds, so share one
+
+
+def test_analyzer_loads_the_pinned_spacy_model(analyzer: AnalyzerEngine) -> None:
+    meta = analyzer.nlp_engine.nlp["en"].meta  # type: ignore[attr-defined]
+    assert f"{meta['lang']}_{meta['name']}" == SPACY_MODEL
 
 
 def _top_score(analyzer: AnalyzerEngine, text: str, entity: str) -> float:

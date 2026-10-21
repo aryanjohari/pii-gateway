@@ -8,7 +8,7 @@ RUN useradd --create-home --uid 10001 appuser
 COPY pyproject.toml constraints.txt README.md LICENSE ./
 COPY src ./src
 RUN pip install --no-cache-dir -c constraints.txt . \
-    && python -m spacy download en_core_web_sm
+    && python -m spacy download en_core_web_lg
 USER appuser
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \

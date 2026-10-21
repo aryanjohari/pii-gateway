@@ -101,7 +101,7 @@ docker compose -f docker-compose.yml -f docker-compose.example.yml up --build
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_lg
 export SANITIZE_HTTP_API_KEY=dev
 export STORAGE_LOCAL_PATH=./data/out
 export GATEWAY_STATE_DIR=./data/state
