@@ -20,6 +20,8 @@ Self-hosted API that redacts personal data from text and JSON using policy rules
 
 `email` and `full_name` are redacted by declared policy rules; names and emails in free text are caught by Presidio.
 
+Calling an LLM? Point your SDK's `base_url` at this gateway's `/v1/chat/completions` and prompts are redacted before they leave your network. See [LLM proxy](#llm-proxy-openai-compatible).
+
 Self-hosted **PII sanitization gateway**: one Docker-first FastAPI service that redacts free text and nested JSON from a mounted **policy file** (deterministic field rules) with **Microsoft Presidio** as best-effort NLP on undeclared strings, then optionally writes artifacts to local disk or S3-compatible storage. Batch paths can pull PostgreSQL exports or CSV/JSON inbox files.
 
 **Why:** Centralize scrubbing so analytics, logs, and experiments never need a copy of the same redaction logic in every repo. **Not** a compliance product, accuracy guarantee, or OLTP database proxy—policy-first; NLP misses are expected.
