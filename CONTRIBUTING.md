@@ -34,7 +34,7 @@ pip freeze --exclude-editable | sort -f > constraints.txt
 ```
 
 Then re-add the three header comment lines, run the full test suite, and commit the file on its own.
-The spaCy model (`en_core_web_sm`) is downloaded separately and is not pinned here.
+The spaCy model (`en_core_web_lg`, named in `core/analyzer_factory.py`) is downloaded separately; its version follows your installed spaCy.
 
 ## Pull requests
 
