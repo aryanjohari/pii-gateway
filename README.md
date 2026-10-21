@@ -2,6 +2,12 @@
 
 Self-hosted API that redacts personal data from text and JSON using policy rules plus best-effort NLP. **[Live demo](https://pii-gateway.arkhives.nz/)** (sample data only).
 
+> **Status**
+> - A portfolio project. Not yet used in my own projects; dogfooding is planned.
+> - The evaluation data is synthetic and written by the same person who wrote the recognisers, so the numbers are an optimistic baseline.
+> - Best-effort redaction, not a compliance product. NLP misses are expected.
+> - No external users yet.
+
 ```jsonc
 // POST /v1/sanitize  (config/examples/config.example.yaml)
 { "text": "Contact Alice Johnson at alice@example.com for details.",
