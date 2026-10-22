@@ -25,7 +25,7 @@ Appears below the box after a request. One story, two labelled panels side by si
 
 - Under the panels: entity counts by type, and the time taken.
 - The right panel is the prompt that **would** be sent. The demo calls `/v1/sanitize`; it does not call an LLM, and the page must not imply it does.
-- A short **limits note**: names in free text may be missed (for example some Māori names), a mistyped NHI or IRD number is not redacted, and licence numbers match by shape only. It links to the README evaluation section, with the caveat that the numbers come from synthetic data written by the same author as the detectors.
+- A short **limits note**: names in free text may be missed, a mistyped NHI or IRD number is not redacted, and licence numbers match by shape only. It links to the README evaluation section, with the caveat that the numbers come from synthetic data written by the same author as the detectors.
 
 ### (c) Self-host
 - The `docker compose` commands, a link to the repo, and one sentence on why: the public demo is rate limited and should never receive real data.

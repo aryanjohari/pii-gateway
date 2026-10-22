@@ -11,7 +11,7 @@ export function LimitsNote() {
         missed item reaches the AI, so check the right-hand panel before you rely on it.
       </p>
       <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
-        <li>Names in free text can be missed. A Māori name was not detected in one test.</li>
+        <li>Names in free text can be missed.</li>
         <li>An NHI or IRD number with a mistyped check digit is not redacted.</li>
         <li>Driver licence numbers match by shape only, so look-alike codes are redacted too.</li>
         <li>The highlights in the left panel are recovered from the output and may be off.</li>
